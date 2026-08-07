@@ -1,4 +1,5 @@
-import type { Choice, Player } from '../types/game';
+import type { Player } from '../types/game';
+import { STARTING_HEALTH } from '../types/game';
 
 export function createInitialPlayer(
   id: string,
@@ -9,55 +10,13 @@ export function createInitialPlayer(
     id,
     name,
     connected: true,
-    health: 100,
+    health: STARTING_HEALTH,
     money: 0,
+    bankedGold: 0,
+    status: 'alive',
     hasSubmitted: false,
     joinOrder,
   };
-}
-
-export function resolveRound(
-  players: Player[],
-  choices: Map<string, Choice>,
-): Player[] {
-  return players.map((player) => {
-    if (!player.connected) {
-      return { ...player, hasSubmitted: false };
-    }
-
-    const choice = choices.get(player.id);
-    if (!choice) {
-      return { ...player, hasSubmitted: false };
-    }
-
-    let { health, money } = player;
-
-    switch (choice) {
-      case 'safe':
-        health = Math.min(100, health + 5);
-        break;
-      case 'risk':
-        if (Math.random() > 0.5) {
-          money += 20;
-        } else {
-          health = Math.max(0, health - 15);
-        }
-        break;
-      case 'betray':
-        money += 30;
-        health = Math.max(0, health - 10);
-        break;
-      default:
-        break;
-    }
-
-    return {
-      ...player,
-      health,
-      money,
-      hasSubmitted: false,
-    };
-  });
 }
 
 export function electHost(players: Player[]): string | null {
@@ -68,7 +27,28 @@ export function electHost(players: Player[]): string | null {
   return connected[0]?.id ?? null;
 }
 
-export function allConnectedSubmitted(players: Player[]): boolean {
-  const active = players.filter((player) => player.connected);
-  return active.length > 0 && active.every((player) => player.hasSubmitted);
+export function resetPlayersForGameStart(players: Player[]): Player[] {
+  return players.map((player) => ({
+    ...player,
+    health: STARTING_HEALTH,
+    money: 0,
+    bankedGold: 0,
+    status: 'alive' as const,
+    hasSubmitted: false,
+  }));
+}
+
+export function markDisconnectedInGame(player: Player, inGame: boolean): Player {
+  if (!inGame || player.status !== 'alive') {
+    return { ...player, connected: false, hasSubmitted: false };
+  }
+
+  return {
+    ...player,
+    connected: false,
+    hasSubmitted: false,
+    health: 0,
+    money: 0,
+    status: 'dead',
+  };
 }

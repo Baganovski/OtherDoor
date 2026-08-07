@@ -1,35 +1,37 @@
-import type { Choice } from '../types/game';
+import type { DecisionSide } from '../types/game';
+import type { DealtCard } from '../types/game';
 
 interface ChoicePanelProps {
+  card: DealtCard;
   disabled: boolean;
-  onSubmit: (choice: Choice) => void;
+  onSubmit: (choice: DecisionSide) => void;
 }
 
-const CHOICES: Array<{ id: Choice; label: string; detail: string }> = [
-  { id: 'safe', label: 'Safe', detail: '+5 HP' },
-  { id: 'risk', label: 'Risk', detail: 'Gems or damage' },
-  { id: 'betray', label: 'Betray', detail: '+30 gems, -10 HP' },
-];
-
-export function ChoicePanel({ disabled, onSubmit }: ChoicePanelProps) {
+export function ChoicePanel({ card, disabled, onSubmit }: ChoicePanelProps) {
   return (
     <div className="choice-panel">
       <p className="choice-hint">
-        {disabled ? 'Choice locked. Waiting for others…' : 'Tap a choice to lock it in.'}
+        {disabled ? 'Choice locked. Waiting for others…' : 'Tap a decision to lock it in.'}
       </p>
-      <div className="choice-grid">
-        {CHOICES.map((choice) => (
-          <button
-            key={choice.id}
-            type="button"
-            className="choice-btn"
-            disabled={disabled}
-            onClick={() => onSubmit(choice.id)}
-          >
-            <span className="choice-label">{choice.label}</span>
-            <span className="choice-detail">{choice.detail}</span>
-          </button>
-        ))}
+      <div className="choice-grid choice-grid-two">
+        <button
+          type="button"
+          className="choice-btn"
+          disabled={disabled}
+          onClick={() => onSubmit('a')}
+        >
+          <span className="choice-label">A</span>
+          <span className="choice-detail">{card.optionA.label}</span>
+        </button>
+        <button
+          type="button"
+          className="choice-btn"
+          disabled={disabled}
+          onClick={() => onSubmit('b')}
+        >
+          <span className="choice-label">B</span>
+          <span className="choice-detail">{card.optionB.label}</span>
+        </button>
       </div>
     </div>
   );

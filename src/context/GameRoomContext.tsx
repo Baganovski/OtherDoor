@@ -10,7 +10,7 @@ import {
 import { RoomSession } from '../lib/RoomSession';
 import { generateRoomCode, normalizeRoomCode } from '../lib/roomCode';
 import { getOrCreatePlayerId } from '../lib/playerId';
-import type { Choice, GameState } from '../types/game';
+import type { DecisionSide, GameState, StayExitChoice } from '../types/game';
 
 interface GameRoomContextValue {
   state: GameState | null;
@@ -20,7 +20,8 @@ interface GameRoomContextValue {
   createRoom: (playerName: string) => Promise<void>;
   joinRoom: (roomCode: string, playerName: string) => Promise<void>;
   startGame: () => void;
-  submitChoice: (choice: Choice) => void;
+  submitChoice: (choice: DecisionSide) => void;
+  submitStayExit: (choice: StayExitChoice) => void;
   leaveRoom: () => void;
   clearNotice: () => void;
   clearError: () => void;
@@ -99,8 +100,12 @@ export function GameRoomProvider({ children }: { children: ReactNode }) {
     sessionRef.current?.startGame();
   }, []);
 
-  const submitChoice = useCallback((choice: Choice) => {
+  const submitChoice = useCallback((choice: DecisionSide) => {
     sessionRef.current?.submitChoice(choice);
+  }, []);
+
+  const submitStayExit = useCallback((choice: StayExitChoice) => {
+    sessionRef.current?.submitStayExit(choice);
   }, []);
 
   const value = useMemo(
@@ -113,6 +118,7 @@ export function GameRoomProvider({ children }: { children: ReactNode }) {
       joinRoom,
       startGame,
       submitChoice,
+      submitStayExit,
       leaveRoom,
       clearNotice: () => setNotice(null),
       clearError: () => setError(null),
@@ -126,6 +132,7 @@ export function GameRoomProvider({ children }: { children: ReactNode }) {
       joinRoom,
       startGame,
       submitChoice,
+      submitStayExit,
       leaveRoom,
     ],
   );

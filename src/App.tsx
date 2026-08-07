@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useGameRoom } from './context/GameRoomContext';
 import { RoomShell } from './components/RoomShell';
-import { MAX_PLAYERS } from './types/game';
+import { MAX_PLAYERS, MIN_PLAYERS } from './types/game';
 
 type Screen = 'home' | 'create' | 'join';
 
@@ -15,6 +15,7 @@ export function App() {
     joinRoom,
     startGame,
     submitChoice,
+    submitStayExit,
     leaveRoom,
     clearNotice,
     clearError,
@@ -27,13 +28,19 @@ export function App() {
   if (state) {
     const connectedPlayers = state.players.filter((player) => player.connected);
     const localPlayer = state.players.find((player) => player.id === state.localPlayerId);
+    const localCanAct =
+      localPlayer?.status === 'alive' && localPlayer.connected === true;
 
     return (
       <RoomShell
         roomCode={state.roomCode}
         phase={state.phase}
         connectedCount={connectedPlayers.length}
-        canStart={connectedPlayers.length === MAX_PLAYERS && state.phase === 'lobby'}
+        canStart={
+          connectedPlayers.length >= MIN_PLAYERS &&
+          connectedPlayers.length <= MAX_PLAYERS &&
+          state.phase === 'lobby'
+        }
         onStart={startGame}
         onLeave={leaveRoom}
         roster={state.players.map((player) => ({
@@ -43,18 +50,24 @@ export function App() {
           isHost: player.id === state.hostPlayerId,
           isYou: player.id === state.localPlayerId,
         }))}
-        players={connectedPlayers.map((player) => ({
+        players={state.players.map((player) => ({
           id: player.id,
           name: player.name,
           connected: player.connected,
           health: player.health,
           money: player.money,
+          bankedGold: player.bankedGold,
+          status: player.status,
           hasSubmitted: player.hasSubmitted,
           isYou: player.id === state.localPlayerId,
         }))}
-        round={state.round}
+        blockNumber={state.blockNumber}
+        choiceIndexInBlock={state.choiceIndexInBlock}
+        currentCard={state.currentCard}
         localHasSubmitted={localPlayer?.hasSubmitted ?? false}
+        localCanAct={localCanAct}
         onSubmitChoice={submitChoice}
+        onSubmitStayExit={submitStayExit}
         notice={notice}
         error={error}
         onDismissNotice={clearNotice}

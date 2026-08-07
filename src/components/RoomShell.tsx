@@ -2,11 +2,15 @@ import { JoinCodeBar } from './JoinCodeBar';
 import { LobbyRoster } from './LobbyRoster';
 import { GameHud } from './GameHud';
 import { ChoicePanel } from './ChoicePanel';
+import { StayExitPanel } from './StayExitPanel';
+import { ResultsPanel } from './ResultsPanel';
 import { Toast } from './Toast';
+import type { DealtCard, DecisionSide, GamePhase, StayExitChoice } from '../types/game';
+import { CHOICES_PER_BLOCK } from '../types/game';
 
 interface RoomShellProps {
   roomCode: string;
-  phase: 'lobby' | 'playing' | 'resolving';
+  phase: GamePhase;
   connectedCount: number;
   canStart: boolean;
   onStart: () => void;
@@ -24,12 +28,18 @@ interface RoomShellProps {
     connected: boolean;
     health: number;
     money: number;
+    bankedGold: number;
+    status: 'alive' | 'dead' | 'exited';
     hasSubmitted: boolean;
     isYou: boolean;
   }>;
-  round: number;
+  blockNumber: number;
+  choiceIndexInBlock: number;
+  currentCard: DealtCard | null;
   localHasSubmitted: boolean;
-  onSubmitChoice: (choice: 'risk' | 'safe' | 'betray') => void;
+  localCanAct: boolean;
+  onSubmitChoice: (choice: DecisionSide) => void;
+  onSubmitStayExit: (choice: StayExitChoice) => void;
   notice: string | null;
   error: string | null;
   onDismissNotice: () => void;
@@ -45,15 +55,19 @@ export function RoomShell({
   onLeave,
   roster,
   players,
-  round,
+  blockNumber,
+  choiceIndexInBlock,
+  currentCard,
   localHasSubmitted,
+  localCanAct,
   onSubmitChoice,
+  onSubmitStayExit,
   notice,
   error,
   onDismissNotice,
   onDismissError,
 }: RoomShellProps) {
-  const inGame = phase === 'playing' || phase === 'resolving';
+  const inGame = phase !== 'lobby' && phase !== 'finished';
 
   return (
     <div className="room-shell">
@@ -78,27 +92,61 @@ export function RoomShell({
               disabled={!canStart}
               onClick={onStart}
             >
-              {canStart ? 'Open the door' : `Waiting (${connectedCount}/6)`}
+              {canStart
+                ? 'Open the door'
+                : `Waiting for players (${connectedCount}/6 · min 2)`}
             </button>
+          </section>
+        ) : phase === 'finished' ? (
+          <section className="panel game-panel">
+            <header className="panel-header">
+              <p className="eyebrow">Run complete</p>
+              <h2>Final standings</h2>
+              <p className="panel-copy">
+                Banked gold is safe. Anyone who died lost their unbanked gold.
+              </p>
+            </header>
+
+            <ResultsPanel players={players} />
           </section>
         ) : (
           <section className="panel game-panel">
             <header className="panel-header">
-              <p className="eyebrow">Round {round}</p>
-              <h2>{phase === 'resolving' ? 'Fate unfolds…' : 'Choose in secret'}</h2>
+              <p className="eyebrow">
+                {phase === 'stayOrExit'
+                  ? `Block ${blockNumber} complete`
+                  : `Block ${blockNumber} · Choice ${choiceIndexInBlock} of ${CHOICES_PER_BLOCK}`}
+              </p>
+              <h2>
+                {phase === 'resolving'
+                  ? 'Fate unfolds…'
+                  : phase === 'stayOrExit'
+                    ? 'Stay or bank?'
+                    : currentCard?.title ?? 'Choose in secret'}
+              </h2>
               <p className="panel-copy">
                 {phase === 'resolving'
-                  ? 'Resolving every choice across connected players.'
-                  : 'Lock your choice. The round resolves when everyone still in has decided.'}
+                  ? 'Resolving every choice across the party.'
+                  : phase === 'stayOrExit'
+                    ? 'Exit to bank your gold. Stay and risk it for four more choices.'
+                    : 'Lock your decision. The choice resolves when everyone still in has decided.'}
               </p>
             </header>
 
             <GameHud players={players} />
 
-            {phase === 'playing' && (
+            {phase === 'choosing' && currentCard && localCanAct && (
               <ChoicePanel
+                card={currentCard}
                 disabled={localHasSubmitted}
                 onSubmit={onSubmitChoice}
+              />
+            )}
+
+            {phase === 'stayOrExit' && localCanAct && (
+              <StayExitPanel
+                disabled={localHasSubmitted}
+                onSubmit={onSubmitStayExit}
               />
             )}
           </section>
