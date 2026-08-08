@@ -5,8 +5,9 @@ import { ChoicePanel } from './ChoicePanel';
 import { StayExitPanel } from './StayExitPanel';
 import { ResultsPanel } from './ResultsPanel';
 import { Toast } from './Toast';
+import { TypewriterText, TYPE_SPEED, typeDelay } from './TypewriterText';
 import type { DealtCard, DecisionSide, GamePhase, StayExitChoice } from '../types/game';
-import { CHOICES_PER_BLOCK } from '../types/game';
+import { CHOICES_PER_BLOCK, MAX_PLAYERS, MIN_PLAYERS } from '../types/game';
 
 interface RoomShellProps {
   roomCode: string;
@@ -69,6 +70,40 @@ export function RoomShell({
 }: RoomShellProps) {
   const inGame = phase !== 'lobby' && phase !== 'finished';
 
+  const eyebrow =
+    phase === 'lobby'
+      ? 'Waiting room'
+      : phase === 'finished'
+        ? 'Run complete'
+        : phase === 'stayOrExit'
+          ? `Block ${blockNumber} complete`
+          : `Block ${blockNumber} · Choice ${choiceIndexInBlock} of ${CHOICES_PER_BLOCK}`;
+
+  const title =
+    phase === 'lobby'
+      ? 'Gather your party'
+      : phase === 'finished'
+        ? 'Final standings'
+        : phase === 'resolving'
+          ? 'Fate unfolds…'
+          : phase === 'stayOrExit'
+            ? 'Stay or bank?'
+            : (currentCard?.title ?? 'Choose in secret');
+
+  const copy =
+    phase === 'lobby'
+      ? `Share the code. Anyone can start with ${MIN_PLAYERS}–${MAX_PLAYERS} players.`
+      : phase === 'finished'
+        ? 'Banked gold is safe. Anyone who died lost their unbanked gold.'
+        : phase === 'resolving'
+          ? 'Resolving every choice across the party.'
+          : phase === 'stayOrExit'
+            ? 'Exit to bank your gold. Stay and risk it for four more choices.'
+            : 'Lock your decision. The choice resolves when everyone still in has decided.';
+
+  const headerLines = [eyebrow, title, copy];
+  const pageKey = `${phase}-${currentCard?.id ?? 'none'}-${blockNumber}-${choiceIndexInBlock}`;
+
   return (
     <div className="room-shell">
       <JoinCodeBar code={roomCode} onLeave={onLeave} />
@@ -77,11 +112,29 @@ export function RoomShell({
         {phase === 'lobby' ? (
           <section className="panel lobby-panel">
             <header className="panel-header">
-              <p className="eyebrow">Waiting room</p>
-              <h2>Gather your party</h2>
-              <p className="panel-copy">
-                Share the code. Start unlocks at 6 players — anyone can open the door.
-              </p>
+              <TypewriterText
+                as="p"
+                className="eyebrow"
+                text={eyebrow}
+                speed={TYPE_SPEED}
+                delay={typeDelay(headerLines, 0, TYPE_SPEED)}
+                replayKey={pageKey}
+              />
+              <TypewriterText
+                as="h2"
+                text={title}
+                speed={TYPE_SPEED}
+                delay={typeDelay(headerLines, 1, TYPE_SPEED)}
+                replayKey={pageKey}
+              />
+              <TypewriterText
+                as="p"
+                className="panel-copy"
+                text={copy}
+                speed={TYPE_SPEED}
+                delay={typeDelay(headerLines, 2, TYPE_SPEED)}
+                replayKey={pageKey}
+              />
             </header>
 
             <LobbyRoster players={roster} connectedCount={connectedCount} />
@@ -93,18 +146,36 @@ export function RoomShell({
               onClick={onStart}
             >
               {canStart
-                ? 'Open the door'
-                : `Waiting for players (${connectedCount}/6 · min 2)`}
+                ? 'Start the game'
+                : `Waiting for players (${connectedCount}/${MAX_PLAYERS} · min ${MIN_PLAYERS})`}
             </button>
           </section>
         ) : phase === 'finished' ? (
           <section className="panel game-panel">
             <header className="panel-header">
-              <p className="eyebrow">Run complete</p>
-              <h2>Final standings</h2>
-              <p className="panel-copy">
-                Banked gold is safe. Anyone who died lost their unbanked gold.
-              </p>
+              <TypewriterText
+                as="p"
+                className="eyebrow"
+                text={eyebrow}
+                speed={TYPE_SPEED}
+                delay={typeDelay(headerLines, 0, TYPE_SPEED)}
+                replayKey={pageKey}
+              />
+              <TypewriterText
+                as="h2"
+                text={title}
+                speed={TYPE_SPEED}
+                delay={typeDelay(headerLines, 1, TYPE_SPEED)}
+                replayKey={pageKey}
+              />
+              <TypewriterText
+                as="p"
+                className="panel-copy"
+                text={copy}
+                speed={TYPE_SPEED}
+                delay={typeDelay(headerLines, 2, TYPE_SPEED)}
+                replayKey={pageKey}
+              />
             </header>
 
             <ResultsPanel players={players} />
@@ -112,25 +183,29 @@ export function RoomShell({
         ) : (
           <section className="panel game-panel">
             <header className="panel-header">
-              <p className="eyebrow">
-                {phase === 'stayOrExit'
-                  ? `Block ${blockNumber} complete`
-                  : `Block ${blockNumber} · Choice ${choiceIndexInBlock} of ${CHOICES_PER_BLOCK}`}
-              </p>
-              <h2>
-                {phase === 'resolving'
-                  ? 'Fate unfolds…'
-                  : phase === 'stayOrExit'
-                    ? 'Stay or bank?'
-                    : currentCard?.title ?? 'Choose in secret'}
-              </h2>
-              <p className="panel-copy">
-                {phase === 'resolving'
-                  ? 'Resolving every choice across the party.'
-                  : phase === 'stayOrExit'
-                    ? 'Exit to bank your gold. Stay and risk it for four more choices.'
-                    : 'Lock your decision. The choice resolves when everyone still in has decided.'}
-              </p>
+              <TypewriterText
+                as="p"
+                className="eyebrow"
+                text={eyebrow}
+                speed={TYPE_SPEED}
+                delay={typeDelay(headerLines, 0, TYPE_SPEED)}
+                replayKey={pageKey}
+              />
+              <TypewriterText
+                as="h2"
+                text={title}
+                speed={TYPE_SPEED}
+                delay={typeDelay(headerLines, 1, TYPE_SPEED)}
+                replayKey={pageKey}
+              />
+              <TypewriterText
+                as="p"
+                className="panel-copy"
+                text={copy}
+                speed={TYPE_SPEED}
+                delay={typeDelay(headerLines, 2, TYPE_SPEED)}
+                replayKey={pageKey}
+              />
             </header>
 
             <GameHud players={players} />
@@ -140,6 +215,8 @@ export function RoomShell({
                 card={currentCard}
                 disabled={localHasSubmitted}
                 onSubmit={onSubmitChoice}
+                typeDelayMs={typeDelay(headerLines, 3, TYPE_SPEED)}
+                replayKey={pageKey}
               />
             )}
 
@@ -147,6 +224,8 @@ export function RoomShell({
               <StayExitPanel
                 disabled={localHasSubmitted}
                 onSubmit={onSubmitStayExit}
+                typeDelayMs={typeDelay(headerLines, 3, TYPE_SPEED)}
+                replayKey={pageKey}
               />
             )}
           </section>

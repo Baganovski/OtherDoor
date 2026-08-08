@@ -1,9 +1,16 @@
 import { useState } from 'react';
 import { useGameRoom } from './context/GameRoomContext';
 import { RoomShell } from './components/RoomShell';
+import { TypewriterText, TYPE_SPEED, typeDelay } from './components/TypewriterText';
 import { MAX_PLAYERS, MIN_PLAYERS } from './types/game';
 
 type Screen = 'home' | 'create' | 'join';
+
+const HOME_BRAND = 'the untitled selection game';
+const HOME_HEADLINE = 'Pick a side. Bank your gold.';
+const HOME_LEDE =
+  'A phone-to-phone party game. Create a room, share the code, and lock in your choices.';
+const HOME_LINES = [HOME_BRAND, HOME_HEADLINE, HOME_LEDE];
 
 export function App() {
   const {
@@ -94,11 +101,29 @@ export function App() {
 
       <main className="home-main">
         <header className="home-hero">
-          <p className="brand">OtherDoor</p>
-          <h1>Step through together.</h1>
-          <p className="home-lede">
-            A phone-to-phone party game. Create a room, share the code, and survive what waits behind the door.
-          </p>
+          <TypewriterText
+            as="p"
+            className="brand"
+            text={HOME_BRAND}
+            speed={TYPE_SPEED}
+            delay={typeDelay(HOME_LINES, 0, TYPE_SPEED)}
+            replayKey="home"
+          />
+          <TypewriterText
+            as="h1"
+            text={HOME_HEADLINE}
+            speed={TYPE_SPEED}
+            delay={typeDelay(HOME_LINES, 1, TYPE_SPEED)}
+            replayKey="home"
+          />
+          <TypewriterText
+            as="p"
+            className="home-lede"
+            text={HOME_LEDE}
+            speed={TYPE_SPEED}
+            delay={typeDelay(HOME_LINES, 2, TYPE_SPEED)}
+            replayKey="home"
+          />
         </header>
 
         {screen === 'home' && (
@@ -138,7 +163,7 @@ export function App() {
                   Back
                 </button>
                 <button type="submit" className="btn btn-primary" disabled={isConnecting}>
-                  {isConnecting ? 'Opening door…' : 'Create & join'}
+                  {isConnecting ? 'Creating room…' : 'Create & join'}
                 </button>
               </div>
             </form>

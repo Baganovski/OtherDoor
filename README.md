@@ -1,6 +1,6 @@
-# OtherDoor
+# the untitled selection game
 
-Phone-to-phone web party game foundation inspired by *Another Door*.
+Phone-to-phone web party game — create a room, share the code, and lock in your choices.
 
 ## Features
 
@@ -32,7 +32,7 @@ Open the dev server URL on multiple phones/browsers to test. For real devices on
 1. Open the app on device A → **Create game**
 2. Copy/share the join code from the top bar
 3. Open on devices B–F → **Join game** with the code and unique names
-4. Any player taps **Open the door** once at least 2 players are connected (up to 6)
+4. Any player taps **Start the game** once at least 2 players are connected (up to 6)
 5. Each player locks a choice; when all connected players submit, the round resolves
 6. Disconnect one phone to verify the game continues without them
 

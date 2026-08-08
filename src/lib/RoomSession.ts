@@ -398,7 +398,7 @@ export class RoomSession {
     this.broadcast({ type: 'start', startedBy });
     this.broadcast({ type: 'stateSync', state: toPublicState(this.state) });
     this.emitState();
-    this.emitNotice('The door opens. Make your choice.');
+    this.emitNotice('The game begins. Make your choice.');
   }
   private handleSubmitChoice(playerId: string, choice: DecisionSide): void {
     if (!this.isHost || this.state.phase !== 'choosing') return;

@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'otherdoor_player_id';
+const STORAGE_KEY = 'untitled_selection_game_player_id';
 
 export function getOrCreatePlayerId(): string {
   const existing = sessionStorage.getItem(STORAGE_KEY);
