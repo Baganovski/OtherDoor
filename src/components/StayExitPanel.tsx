@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react';
 import type { StayExitChoice } from '../types/game';
-import { TypewriterText, TYPE_SPEED, typeDelay } from './TypewriterText';
 
 interface StayExitPanelProps {
   disabled: boolean;
   onSubmit: (choice: StayExitChoice) => void;
-  typeDelayMs?: number;
-  replayKey?: string | number;
+  roundKey?: string | number;
 }
 
 const STAY_DETAIL = 'Keep playing with your unbanked gold at risk';
@@ -15,15 +13,14 @@ const EXIT_DETAIL = 'Bank your gold and leave the run';
 export function StayExitPanel({
   disabled,
   onSubmit,
-  typeDelayMs = 0,
-  replayKey,
+  roundKey,
 }: StayExitPanelProps) {
   const [selected, setSelected] = useState<StayExitChoice | null>(null);
   const locked = disabled || selected !== null;
 
   useEffect(() => {
     setSelected(null);
-  }, [replayKey]);
+  }, [roundKey]);
 
   const handleSelect = (choice: StayExitChoice) => {
     if (locked) return;
@@ -37,22 +34,9 @@ export function StayExitPanel({
       : 'Selection made. Waiting for other players…'
     : 'Bank your gold and leave, or stay for another four choices.';
 
-  const lines = [hint, STAY_DETAIL, EXIT_DETAIL];
-
   return (
     <div className={`choice-panel${locked ? ' choice-panel-locked' : ''}`}>
-      {locked ? (
-        <p className="choice-hint">{hint}</p>
-      ) : (
-        <TypewriterText
-          as="p"
-          className="choice-hint"
-          text={hint}
-          speed={TYPE_SPEED}
-          delay={typeDelayMs + typeDelay(lines, 0, TYPE_SPEED)}
-          replayKey={`${replayKey}-hint`}
-        />
-      )}
+      <p className="choice-hint">{hint}</p>
       <div className="choice-grid choice-grid-two">
         <button
           type="button"
@@ -64,18 +48,7 @@ export function StayExitPanel({
             Stay
             {selected === 'stay' && <span className="choice-selected-tag">Selected</span>}
           </span>
-          {locked ? (
-            <span className="choice-detail">{STAY_DETAIL}</span>
-          ) : (
-            <TypewriterText
-              as="span"
-              className="choice-detail"
-              text={STAY_DETAIL}
-              speed={TYPE_SPEED}
-              delay={typeDelayMs + typeDelay(lines, 1, TYPE_SPEED)}
-              replayKey={`${replayKey}-stay`}
-            />
-          )}
+          <span className="choice-detail">{STAY_DETAIL}</span>
         </button>
         <button
           type="button"
@@ -87,18 +60,7 @@ export function StayExitPanel({
             Exit
             {selected === 'exit' && <span className="choice-selected-tag">Selected</span>}
           </span>
-          {locked ? (
-            <span className="choice-detail">{EXIT_DETAIL}</span>
-          ) : (
-            <TypewriterText
-              as="span"
-              className="choice-detail"
-              text={EXIT_DETAIL}
-              speed={TYPE_SPEED}
-              delay={typeDelayMs + typeDelay(lines, 2, TYPE_SPEED)}
-              replayKey={`${replayKey}-exit`}
-            />
-          )}
+          <span className="choice-detail">{EXIT_DETAIL}</span>
         </button>
       </div>
     </div>

@@ -5,7 +5,6 @@ import { ChoicePanel } from './ChoicePanel';
 import { StayExitPanel } from './StayExitPanel';
 import { ResultsPanel } from './ResultsPanel';
 import { Toast } from './Toast';
-import { TypewriterText, TYPE_SPEED, typeDelay } from './TypewriterText';
 import type { DealtCard, DecisionSide, GamePhase, StayExitChoice } from '../types/game';
 import { CHOICES_PER_BLOCK, MAX_PLAYERS, MIN_PLAYERS } from '../types/game';
 
@@ -45,6 +44,24 @@ interface RoomShellProps {
   error: string | null;
   onDismissNotice: () => void;
   onDismissError: () => void;
+}
+
+function PanelHeader({
+  eyebrow,
+  title,
+  copy,
+}: {
+  eyebrow: string;
+  title: string;
+  copy: string;
+}) {
+  return (
+    <header className="panel-header">
+      <p className="eyebrow">{eyebrow}</p>
+      <h2>{title}</h2>
+      <p className="panel-copy">{copy}</p>
+    </header>
+  );
 }
 
 export function RoomShell({
@@ -101,8 +118,7 @@ export function RoomShell({
             ? 'Exit to bank your gold. Stay and risk it for four more choices.'
             : 'Lock your decision. The choice resolves when everyone still in has decided.';
 
-  const headerLines = [eyebrow, title, copy];
-  const pageKey = `${phase}-${currentCard?.id ?? 'none'}-${blockNumber}-${choiceIndexInBlock}`;
+  const roundKey = `${phase}-${currentCard?.id ?? 'none'}-${blockNumber}-${choiceIndexInBlock}`;
 
   return (
     <div className="room-shell">
@@ -111,31 +127,7 @@ export function RoomShell({
       <main className="room-main">
         {phase === 'lobby' ? (
           <section className="panel lobby-panel">
-            <header className="panel-header">
-              <TypewriterText
-                as="p"
-                className="eyebrow"
-                text={eyebrow}
-                speed={TYPE_SPEED}
-                delay={typeDelay(headerLines, 0, TYPE_SPEED)}
-                replayKey={pageKey}
-              />
-              <TypewriterText
-                as="h2"
-                text={title}
-                speed={TYPE_SPEED}
-                delay={typeDelay(headerLines, 1, TYPE_SPEED)}
-                replayKey={pageKey}
-              />
-              <TypewriterText
-                as="p"
-                className="panel-copy"
-                text={copy}
-                speed={TYPE_SPEED}
-                delay={typeDelay(headerLines, 2, TYPE_SPEED)}
-                replayKey={pageKey}
-              />
-            </header>
+            <PanelHeader eyebrow={eyebrow} title={title} copy={copy} />
 
             <LobbyRoster players={roster} connectedCount={connectedCount} />
 
@@ -152,61 +144,12 @@ export function RoomShell({
           </section>
         ) : phase === 'finished' ? (
           <section className="panel game-panel">
-            <header className="panel-header">
-              <TypewriterText
-                as="p"
-                className="eyebrow"
-                text={eyebrow}
-                speed={TYPE_SPEED}
-                delay={typeDelay(headerLines, 0, TYPE_SPEED)}
-                replayKey={pageKey}
-              />
-              <TypewriterText
-                as="h2"
-                text={title}
-                speed={TYPE_SPEED}
-                delay={typeDelay(headerLines, 1, TYPE_SPEED)}
-                replayKey={pageKey}
-              />
-              <TypewriterText
-                as="p"
-                className="panel-copy"
-                text={copy}
-                speed={TYPE_SPEED}
-                delay={typeDelay(headerLines, 2, TYPE_SPEED)}
-                replayKey={pageKey}
-              />
-            </header>
-
+            <PanelHeader eyebrow={eyebrow} title={title} copy={copy} />
             <ResultsPanel players={players} />
           </section>
         ) : (
           <section className="panel game-panel">
-            <header className="panel-header">
-              <TypewriterText
-                as="p"
-                className="eyebrow"
-                text={eyebrow}
-                speed={TYPE_SPEED}
-                delay={typeDelay(headerLines, 0, TYPE_SPEED)}
-                replayKey={pageKey}
-              />
-              <TypewriterText
-                as="h2"
-                text={title}
-                speed={TYPE_SPEED}
-                delay={typeDelay(headerLines, 1, TYPE_SPEED)}
-                replayKey={pageKey}
-              />
-              <TypewriterText
-                as="p"
-                className="panel-copy"
-                text={copy}
-                speed={TYPE_SPEED}
-                delay={typeDelay(headerLines, 2, TYPE_SPEED)}
-                replayKey={pageKey}
-              />
-            </header>
+            <PanelHeader eyebrow={eyebrow} title={title} copy={copy} />
 
             <GameHud players={players} />
 
@@ -215,8 +158,7 @@ export function RoomShell({
                 card={currentCard}
                 disabled={localHasSubmitted}
                 onSubmit={onSubmitChoice}
-                typeDelayMs={typeDelay(headerLines, 3, TYPE_SPEED)}
-                replayKey={pageKey}
+                roundKey={roundKey}
               />
             )}
 
@@ -224,8 +166,7 @@ export function RoomShell({
               <StayExitPanel
                 disabled={localHasSubmitted}
                 onSubmit={onSubmitStayExit}
-                typeDelayMs={typeDelay(headerLines, 3, TYPE_SPEED)}
-                replayKey={pageKey}
+                roundKey={roundKey}
               />
             )}
           </section>

@@ -4,10 +4,8 @@ type TypewriterTag = 'p' | 'h1' | 'h2' | 'span' | 'div';
 
 /** ms per character — deliberate, readable typing pace */
 export const TYPE_SPEED = 36;
-/** pause before the first line begins */
+/** pause before typing begins */
 export const TYPE_START_DELAY = 450;
-/** pause between sequential lines */
-export const TYPE_LINE_GAP = 420;
 
 interface TypewriterTextProps {
   text: string;
@@ -19,7 +17,7 @@ interface TypewriterTextProps {
   delay?: number;
   /** When false, stays empty until true (for sequencing). */
   active?: boolean;
-  /** Change this to replay the animation (e.g. phase + card id). */
+  /** Change this to replay the animation (e.g. screen key). */
   replayKey?: string | number;
   onComplete?: () => void;
 }
@@ -99,19 +97,4 @@ export function TypewriterText({
       {typing && <span className="typewriter-caret" aria-hidden="true" />}
     </Tag>
   );
-}
-
-/** Cumulative delay helper for sequential typewriters on one screen. */
-export function typeDelay(
-  parts: string[],
-  index: number,
-  speed = TYPE_SPEED,
-  gap = TYPE_LINE_GAP,
-  startDelay = TYPE_START_DELAY,
-): number {
-  let total = startDelay;
-  for (let i = 0; i < index; i += 1) {
-    total += parts[i].length * speed + gap;
-  }
-  return total;
 }
