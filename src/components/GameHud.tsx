@@ -70,8 +70,8 @@ export function GameHud({ players }: GameHudProps) {
                 </span>
               )}
               {player.status === 'alive' && player.connected && (
-                <span className={`decision-pill ${player.hasSubmitted ? 'ready' : ''}`}>
-                  {player.hasSubmitted ? 'Locked' : 'Choosing'}
+                <span className={`decision-pill ${player.hasSubmitted ? 'ready' : 'waiting'}`}>
+                  {player.hasSubmitted ? 'Decision made' : 'Waiting'}
                 </span>
               )}
             </div>

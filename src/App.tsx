@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useGameRoom } from './context/GameRoomContext';
 import { RoomShell } from './components/RoomShell';
-import { TypewriterText, TYPE_SPEED, typeDelay } from './components/TypewriterText';
+import { TypewriterText, TYPE_SPEED, TYPE_START_DELAY } from './components/TypewriterText';
 import { MAX_PLAYERS, MIN_PLAYERS } from './types/game';
 
 type Screen = 'home' | 'create' | 'join';
@@ -10,7 +10,6 @@ const HOME_BRAND = 'the untitled selection game';
 const HOME_HEADLINE = 'Pick a side. Bank your gold.';
 const HOME_LEDE =
   'A phone-to-phone party game. Create a room, share the code, and lock in your choices.';
-const HOME_LINES = [HOME_BRAND, HOME_HEADLINE, HOME_LEDE];
 
 export function App() {
   const {
@@ -106,24 +105,11 @@ export function App() {
             className="brand"
             text={HOME_BRAND}
             speed={TYPE_SPEED}
-            delay={typeDelay(HOME_LINES, 0, TYPE_SPEED)}
+            delay={TYPE_START_DELAY}
             replayKey="home"
           />
-          <TypewriterText
-            as="h1"
-            text={HOME_HEADLINE}
-            speed={TYPE_SPEED}
-            delay={typeDelay(HOME_LINES, 1, TYPE_SPEED)}
-            replayKey="home"
-          />
-          <TypewriterText
-            as="p"
-            className="home-lede"
-            text={HOME_LEDE}
-            speed={TYPE_SPEED}
-            delay={typeDelay(HOME_LINES, 2, TYPE_SPEED)}
-            replayKey="home"
-          />
+          <h1>{HOME_HEADLINE}</h1>
+          <p className="home-lede">{HOME_LEDE}</p>
         </header>
 
         {screen === 'home' && (

@@ -469,6 +469,10 @@ button {
   color: var(--text-muted);
 }
 
+.decision-pill.waiting {
+  color: var(--text-muted);
+}
+
 .decision-pill.ready {
   color: var(--success);
 }
@@ -534,6 +538,7 @@ button {
   border: 1px solid rgba(42, 34, 26, 0.45);
   color: var(--text);
   box-shadow: 0 1px 0 rgba(255, 250, 240, 0.5) inset;
+  transition: opacity 0.2s ease, background 0.2s ease, border-color 0.2s ease;
 }
 
 .choice-btn:not(:disabled):hover {
@@ -545,16 +550,48 @@ button {
   background: #e0d6c6;
 }
 
+.choice-btn:disabled {
+  cursor: default;
+}
+
+.choice-btn-selected {
+  background: rgba(224, 214, 198, 0.95);
+  border-color: rgba(42, 34, 26, 0.65);
+  opacity: 1;
+}
+
+.choice-btn-dimmed {
+  opacity: 0.45;
+  background: rgba(232, 226, 216, 0.7);
+  border-color: rgba(42, 34, 26, 0.25);
+  color: var(--text-muted);
+}
+
 .choice-label {
-  display: block;
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
   font-family: var(--font-display);
   font-size: 1.05rem;
   margin-bottom: 0.2rem;
 }
 
+.choice-selected-tag {
+  font-family: var(--font-body);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--success);
+}
+
 .choice-detail {
+  display: block;
   color: var(--text-muted);
   font-size: 0.85rem;
+}
+
+.choice-panel-locked .choice-hint {
+  color: var(--text);
 }
 
 span.typewriter {
