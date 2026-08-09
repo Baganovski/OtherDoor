@@ -28,7 +28,7 @@ export function App() {
     startDemo,
     startGame,
     submitChoice,
-    submitStayExit,
+    submitStayBank,
     leaveRoom,
     clearNotice,
     clearError,
@@ -76,13 +76,14 @@ export function App() {
           hasSubmitted: player.hasSubmitted,
           isYou: player.id === state.localPlayerId,
         }))}
+        roundNumber={state.roundNumber}
         blockNumber={state.blockNumber}
         choiceIndexInBlock={state.choiceIndexInBlock}
         currentCard={state.currentCard}
         localHasSubmitted={localPlayer?.hasSubmitted ?? false}
         localCanAct={localCanAct}
         onSubmitChoice={submitChoice}
-        onSubmitStayExit={submitStayExit}
+        onSubmitStayBank={submitStayBank}
         notice={notice}
         error={error}
         onDismissNotice={clearNotice}

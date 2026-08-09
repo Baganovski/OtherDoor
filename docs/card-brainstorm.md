@@ -1,4 +1,8 @@
-# Card brainstorm
+# Card brainstorm — the untitled selection game
+
+Design notes and the source list for decision pairs implemented in `src/data/cards.ts`.
+
+In play, each pair is a secret **A / B** choice. Runs are **3 rounds**; every **4 choices** survivors **Stay** or **Bank** pocket gold. Winning is ranked by **banked gold**.
 
 Copy the template below for each card pair.
 

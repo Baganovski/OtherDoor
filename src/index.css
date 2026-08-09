@@ -525,11 +525,13 @@ button {
 }
 
 .decision-pill {
-  margin-left: auto;
   font-size: 0.72rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
+  text-align: right;
+  justify-self: end;
+  white-space: nowrap;
 }
 
 .decision-pill.waiting {
@@ -834,8 +836,13 @@ span.typewriter {
   }
 
   .hud-row {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
+    column-gap: 1rem;
+  }
+
+  .hud-row-has-decision {
+    grid-template-columns: minmax(0, 1fr) auto 9.5rem;
   }
 
   .results-row {

@@ -1,7 +1,9 @@
 import type { PlayerStatus } from '../types/game';
+import { isBotPlayer } from '../lib/botAI';
 import { PlayerHudStats } from './PlayerHudStats';
 
 interface GameHudProps {
+  isDemo?: boolean;
   players: Array<{
     id: string;
     name: string;
@@ -29,7 +31,7 @@ function statusLabel(status: PlayerStatus, connected: boolean): string {
   }
 }
 
-export function GameHud({ players }: GameHudProps) {
+export function GameHud({ players, isDemo = false }: GameHudProps) {
   const sortedPlayers = [...players].sort((a, b) => {
     if (a.isYou) return -1;
     if (b.isYou) return 1;
@@ -43,11 +45,13 @@ export function GameHud({ players }: GameHudProps) {
           const showHpGold = player.status === 'alive' && player.connected;
           const showBanked = player.status === 'exited' || player.bankedGold > 0;
           const showLost = player.status === 'dead';
+          const pendingLabel =
+            isDemo && isBotPlayer(player.id) ? 'Thinking…' : 'Waiting';
 
           return (
             <li
               key={player.id}
-              className={`hud-row hud-row-${player.status}${player.connected ? '' : ' hud-row-offline'}${player.isYou ? ' hud-row-you' : ''}`}
+              className={`hud-row hud-row-${player.status}${player.connected ? '' : ' hud-row-offline'}${player.isYou ? ' hud-row-you' : ''}${showHpGold ? ' hud-row-has-decision' : ''}`}
             >
               <div className="hud-name">
                 <span>{player.name}</span>
@@ -65,12 +69,12 @@ export function GameHud({ players }: GameHudProps) {
                   showBanked={showBanked}
                   showLost={showLost}
                 />
-                {showHpGold && (
-                  <span className={`decision-pill ${player.hasSubmitted ? 'ready' : 'waiting'}`}>
-                    {player.hasSubmitted ? 'Decision made' : 'Waiting'}
-                  </span>
-                )}
               </div>
+              {showHpGold && (
+                <span className={`decision-pill ${player.hasSubmitted ? 'ready' : 'waiting'}`}>
+                  {player.hasSubmitted ? 'Decision made' : pendingLabel}
+                </span>
+              )}
             </li>
           );
         })}

@@ -1,23 +1,26 @@
 import { useEffect, useRef, useState } from 'react';
-import type { StayExitChoice } from '../types/game';
+import type { StayBankChoice } from '../types/game';
 
 interface StayExitPanelProps {
   disabled: boolean;
-  onSubmit: (choice: StayExitChoice) => void;
+  onSubmit: (choice: StayBankChoice) => void;
   roundKey?: string | number;
+  isDemo?: boolean;
 }
 
-const STAY_DETAIL = 'Keep playing with your unbanked gold at risk';
-const EXIT_DETAIL = 'Bank your gold and leave the run';
+const STAY_DETAIL = 'Keep playing this round with your unbanked gold at risk';
+const BANK_DETAIL = 'Bank your gold and sit out the rest of this round';
 
 export function StayExitPanel({
   disabled,
   onSubmit,
   roundKey,
+  isDemo = false,
 }: StayExitPanelProps) {
-  const [selected, setSelected] = useState<StayExitChoice | null>(null);
+  const [selected, setSelected] = useState<StayBankChoice | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const locked = disabled || selected !== null;
+  const waitingFor = isDemo ? 'CPUs' : 'other players';
 
   useEffect(() => {
     setSelected(null);
@@ -27,7 +30,7 @@ export function StayExitPanel({
     }
   }, [roundKey]);
 
-  const handleSelect = (choice: StayExitChoice) => {
+  const handleSelect = (choice: StayBankChoice) => {
     if (locked) return;
     setSelected(choice);
     onSubmit(choice);
@@ -35,9 +38,9 @@ export function StayExitPanel({
 
   const hint = locked
     ? selected
-      ? `Selection made: ${selected === 'stay' ? 'Stay' : 'Exit'}. Waiting for other players…`
-      : 'Selection made. Waiting for other players…'
-    : 'Bank your gold and leave, or stay for another four choices.';
+      ? `Selection made: ${selected === 'stay' ? 'Stay' : 'Bank'}. Waiting for ${waitingFor}…`
+      : `Selection made. Waiting for ${waitingFor}…`
+    : 'Bank to sit out this round, or stay for another four choices.';
 
   return (
     <div ref={panelRef} className={`choice-panel${locked ? ' choice-panel-locked' : ''}`}>
@@ -57,15 +60,15 @@ export function StayExitPanel({
         </button>
         <button
           type="button"
-          className={`choice-btn choice-btn-exit${selected === 'exit' ? ' choice-btn-selected' : ''}${locked && selected !== 'exit' ? ' choice-btn-dimmed' : ''}`}
+          className={`choice-btn choice-btn-exit${selected === 'bank' ? ' choice-btn-selected' : ''}${locked && selected !== 'bank' ? ' choice-btn-dimmed' : ''}`}
           disabled={locked}
-          onClick={() => handleSelect('exit')}
+          onClick={() => handleSelect('bank')}
         >
           <span className="choice-label">
-            Exit
-            {selected === 'exit' && <span className="choice-selected-tag">Selected</span>}
+            Bank
+            {selected === 'bank' && <span className="choice-selected-tag">Selected</span>}
           </span>
-          <span className="choice-detail">{EXIT_DETAIL}</span>
+          <span className="choice-detail">{BANK_DETAIL}</span>
         </button>
       </div>
     </div>

@@ -1,8 +1,8 @@
 import { CARD_DEFINITIONS } from '../data/cards';
 import type { CardDefinition } from './cardEffects';
 import { applyCardEffect, resolveOptionLabel, rollCardValues } from './cardEffects';
-import type { DealtCard, DecisionSide, Player, StayExitChoice } from '../types/game';
-import { CHOICES_PER_BLOCK, STARTING_HEALTH } from '../types/game';
+import type { DealtCard, DecisionSide, Player, StayBankChoice } from '../types/game';
+import { CHOICES_PER_BLOCK, ROUNDS_PER_RUN, STARTING_HEALTH } from '../types/game';
 
 const WEIGHT_VALUES = { common: 10, uncommon: 3, rare: 1 } as const;
 
@@ -91,9 +91,9 @@ export function resolveCardRound(
   return applyDeaths(updated);
 }
 
-export function resolveStayExit(
+export function resolveStayBank(
   players: Player[],
-  choices: Map<string, StayExitChoice>,
+  choices: Map<string, StayBankChoice>,
 ): Player[] {
   return players.map((player) => {
     if (player.status !== 'alive' || !player.connected) {
@@ -105,7 +105,7 @@ export function resolveStayExit(
       return { ...player, hasSubmitted: false };
     }
 
-    if (choice === 'exit') {
+    if (choice === 'bank') {
       return {
         ...player,
         bankedGold: player.bankedGold + player.money,
@@ -147,12 +147,38 @@ export function hasAlivePlayers(players: Player[]): boolean {
   return players.some((player) => player.status === 'alive' && player.connected);
 }
 
-export function isRunFinished(players: Player[]): boolean {
+/** Round over when nobody connected is still playing this round. */
+export function isRoundOver(players: Player[]): boolean {
   const connected = players.filter((player) => player.connected);
   if (connected.length === 0) return true;
   return !connected.some((player) => player.status === 'alive');
 }
 
-export function shouldOfferStayExit(choiceIndexInBlock: number): boolean {
+export function hasNonDeadPlayers(players: Player[]): boolean {
+  return players.some((player) => player.connected && player.status !== 'dead');
+}
+
+export function shouldStartNextRound(roundNumber: number, players: Player[]): boolean {
+  return roundNumber < ROUNDS_PER_RUN && hasNonDeadPlayers(players);
+}
+
+/** Revive banked (exited) players for the next round; dead stay out for the run. */
+export function prepareNextRound(players: Player[]): Player[] {
+  return players.map((player) => {
+    if (!player.connected || player.status === 'dead') {
+      return { ...player, hasSubmitted: false };
+    }
+
+    return {
+      ...player,
+      status: 'alive',
+      health: STARTING_HEALTH,
+      money: 0,
+      hasSubmitted: false,
+    };
+  });
+}
+
+export function shouldOfferStayBank(choiceIndexInBlock: number): boolean {
   return choiceIndexInBlock >= CHOICES_PER_BLOCK;
 }

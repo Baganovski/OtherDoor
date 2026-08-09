@@ -7,8 +7,10 @@ import { StayExitPanel } from './StayExitPanel';
 import { ResultsPanel } from './ResultsPanel';
 import { Toast } from './Toast';
 import { TypewriterText } from './TypewriterText';
-import type { DealtCard, DecisionSide, GamePhase, StayExitChoice } from '../types/game';
-import { CHOICES_PER_BLOCK, MAX_PLAYERS, MIN_PLAYERS } from '../types/game';
+import type { DealtCard, DecisionSide, GamePhase, StayBankChoice } from '../types/game';
+import { CHOICES_PER_BLOCK, MAX_PLAYERS, MIN_PLAYERS, ROUNDS_PER_RUN } from '../types/game';
+
+const NEXT_SELECTION_HOLD_MS = 3000;
 
 interface RoomShellProps {
   roomCode: string;
@@ -36,13 +38,14 @@ interface RoomShellProps {
     hasSubmitted: boolean;
     isYou: boolean;
   }>;
+  roundNumber: number;
   blockNumber: number;
   choiceIndexInBlock: number;
   currentCard: DealtCard | null;
   localHasSubmitted: boolean;
   localCanAct: boolean;
   onSubmitChoice: (choice: DecisionSide) => void;
-  onSubmitStayExit: (choice: StayExitChoice) => void;
+  onSubmitStayBank: (choice: StayBankChoice) => void;
   notice: string | null;
   error: string | null;
   onDismissNotice: () => void;
@@ -77,13 +80,14 @@ export function RoomShell({
   isDemo = false,
   roster,
   players,
+  roundNumber,
   blockNumber,
   choiceIndexInBlock,
   currentCard,
   localHasSubmitted,
   localCanAct,
   onSubmitChoice,
-  onSubmitStayExit,
+  onSubmitStayBank,
   notice,
   error,
   onDismissNotice,
@@ -92,6 +96,7 @@ export function RoomShell({
   const inGame = phase !== 'lobby' && phase !== 'finished';
   const [optionsReady, setOptionsReady] = useState(true);
   const prevPhaseRef = useRef(phase);
+  const interstitialHoldTimerRef = useRef(0);
 
   const eyebrow =
     phase === 'lobby'
@@ -100,9 +105,9 @@ export function RoomShell({
         : 'Waiting room'
       : phase === 'finished'
         ? 'Run complete'
-        : phase === 'stayOrExit'
-          ? `Block ${blockNumber} complete`
-          : `Block ${blockNumber} · Choice ${choiceIndexInBlock} of ${CHOICES_PER_BLOCK}`;
+        : phase === 'stayOrBank'
+          ? `Round ${roundNumber} of ${ROUNDS_PER_RUN} · Block ${blockNumber} complete`
+          : `Round ${roundNumber} of ${ROUNDS_PER_RUN} · Block ${blockNumber} · Choice ${choiceIndexInBlock} of ${CHOICES_PER_BLOCK}`;
 
   const title =
     phase === 'lobby'
@@ -113,24 +118,24 @@ export function RoomShell({
         ? 'Final standings'
         : phase === 'resolving'
           ? 'Fate unfolds…'
-          : phase === 'stayOrExit'
+          : phase === 'stayOrBank'
             ? 'Stay or bank?'
             : (currentCard?.title ?? 'Choose in secret');
 
   const copy =
     phase === 'lobby'
       ? isDemo
-        ? 'CPU opponents pick at random and exit when at or below 5 health.'
+        ? 'Take your time — CPUs think for a few seconds, weigh risk vs reward, and usually bank near 5 health.'
         : `Share the code. Anyone can start with ${MIN_PLAYERS}–${MAX_PLAYERS} players.`
       : phase === 'finished'
-        ? 'Banked gold is safe. Anyone who died lost their unbanked gold.'
+        ? 'Banked gold is safe. Anyone who died lost their unbanked gold and is out for the run.'
         : phase === 'resolving'
           ? 'Resolving every choice across the party.'
-          : phase === 'stayOrExit'
-            ? 'Exit to bank your gold. Stay and risk it for four more choices.'
+          : phase === 'stayOrBank'
+            ? 'Bank to sit out this round. Stay and risk pocket gold for four more choices. Survivors heal between rounds.'
             : 'Lock your decision. The choice resolves when everyone still in has decided.';
 
-  const roundKey = `${phase}-${currentCard?.id ?? 'none'}-${blockNumber}-${choiceIndexInBlock}`;
+  const roundKey = `${phase}-${currentCard?.id ?? 'none'}-${roundNumber}-${blockNumber}-${choiceIndexInBlock}`;
 
   useEffect(() => {
     const prevPhase = prevPhaseRef.current;
@@ -138,25 +143,36 @@ export function RoomShell({
 
     const enteringFromResolve =
       prevPhase === 'resolving' &&
-      (phase === 'choosing' || phase === 'stayOrExit');
+      (phase === 'choosing' || phase === 'stayOrBank');
 
     const isFirstChoiceOfRun =
-      phase === 'choosing' && blockNumber === 1 && choiceIndexInBlock === 1;
+      phase === 'choosing' &&
+      roundNumber === 1 &&
+      blockNumber === 1 &&
+      choiceIndexInBlock === 1;
 
     if (enteringFromResolve && !isFirstChoiceOfRun) {
+      window.clearTimeout(interstitialHoldTimerRef.current);
       setOptionsReady(false);
     } else if (isFirstChoiceOfRun) {
       setOptionsReady(true);
     }
-  }, [phase, blockNumber, choiceIndexInBlock]);
+  }, [phase, roundNumber, blockNumber, choiceIndexInBlock]);
 
   const handleInterstitialComplete = useCallback(() => {
-    setOptionsReady(true);
+    window.clearTimeout(interstitialHoldTimerRef.current);
+    interstitialHoldTimerRef.current = window.setTimeout(() => {
+      setOptionsReady(true);
+    }, NEXT_SELECTION_HOLD_MS);
+  }, []);
+
+  useEffect(() => {
+    return () => window.clearTimeout(interstitialHoldTimerRef.current);
   }, []);
 
   const showChoosing = phase === 'choosing' && currentCard && localCanAct;
-  const showStayExit = phase === 'stayOrExit' && localCanAct;
-  const showChoiceArea = showChoosing || showStayExit;
+  const showStayBank = phase === 'stayOrBank' && localCanAct;
+  const showChoiceArea = showChoosing || showStayBank;
   const showInterstitial = showChoiceArea && !optionsReady;
 
   return (
@@ -210,18 +226,20 @@ export function RoomShell({
                 disabled={localHasSubmitted}
                 onSubmit={onSubmitChoice}
                 roundKey={roundKey}
+                isDemo={isDemo}
               />
             )}
 
-            {showStayExit && optionsReady && (
+            {showStayBank && optionsReady && (
               <StayExitPanel
                 disabled={localHasSubmitted}
-                onSubmit={onSubmitStayExit}
+                onSubmit={onSubmitStayBank}
                 roundKey={roundKey}
+                isDemo={isDemo}
               />
             )}
 
-            <GameHud players={players} />
+            <GameHud players={players} isDemo={isDemo} />
           </section>
         )}
       </main>
@@ -231,7 +249,7 @@ export function RoomShell({
       {inGame && !notice && !error && (
         <p className="connection-hint">
           {isDemo
-            ? 'Local demo — CPUs pick randomly and exit at 5 health or below.'
+            ? 'Local demo — CPUs weigh risk vs reward and usually bank near 5 health.'
             : 'Phones stay linked peer-to-peer. Dropped players are skipped.'}
         </p>
       )}

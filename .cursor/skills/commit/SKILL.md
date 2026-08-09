@@ -66,7 +66,7 @@ no local build step after commit — CI handles deploy.
    On this Windows / PowerShell machine:
 
    ```
-   $commitMsgPath = Join-Path $env:TEMP "otherdoor-commit-msg.txt"
+   $commitMsgPath = Join-Path $env:TEMP "the-untitled-selection-game-commit-msg.txt"
    $commitMsg = @"
    <subject line>
 

@@ -1,6 +1,6 @@
 ---
 name: bump-version
-description: Bump the OtherDoor app version in package.json. Use only when the user explicitly asks to bump/increment/raise the version, cut a new version, or set a specific version — not as part of a normal commit. Default bump is +0.0.1 (patch) unless the user states otherwise.
+description: Bump the TheUntitledSelectionGame app version in package.json. Use only when the user explicitly asks to bump/increment/raise the version, cut a new version, or set a specific version — not as part of a normal commit. Default bump is +0.0.1 (patch) unless the user states otherwise.
 ---
 
 # Bump app version

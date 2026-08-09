@@ -6,18 +6,20 @@ import type {
   PublicGameState,
   RoomCallbacks,
   RoomMessage,
-  StayExitChoice,
+  StayBankChoice,
 } from '../types/game';
-import { MAX_PLAYERS, MIN_PLAYERS } from '../types/game';
+import { MAX_PLAYERS, MIN_PLAYERS, ROUNDS_PER_RUN } from '../types/game';
 import {
   allActiveSubmitted,
   dealCard,
   getActiveChoosers,
   hasAlivePlayers,
-  isRunFinished,
+  isRoundOver,
+  prepareNextRound,
   resolveCardRound,
-  resolveStayExit,
-  shouldOfferStayExit,
+  resolveStayBank,
+  shouldOfferStayBank,
+  shouldStartNextRound,
 } from './cardEngine';
 import {
   createInitialPlayer,
@@ -41,7 +43,7 @@ export class RoomSession {
   private state: GameState;
   private isHost = false;
   private pendingDecisions = new Map<string, DecisionSide>();
-  private pendingStayExit = new Map<string, StayExitChoice>();
+  private pendingStayBank = new Map<string, StayBankChoice>();
   private callbacks: RoomCallbacks;
   private hostConnection: DataConnection | null = null;
   private destroyed = false;
@@ -61,6 +63,7 @@ export class RoomSession {
         roomCode,
         phase: 'lobby',
         round: 0,
+        roundNumber: 0,
         blockNumber: 0,
         choiceIndexInBlock: 0,
         currentCard: null,
@@ -86,6 +89,7 @@ export class RoomSession {
         roomCode,
         phase: 'lobby',
         round: 0,
+        roundNumber: 0,
         blockNumber: 0,
         choiceIndexInBlock: 0,
         currentCard: null,
@@ -102,10 +106,11 @@ export class RoomSession {
     return this.state;
   }
   startGame(): void {
-    this.send({ type: 'start', startedBy: this.state.localPlayerId });
     if (this.isHost) {
       this.handleStart(this.state.localPlayerId);
+      return;
     }
+    this.send({ type: 'start', startedBy: this.state.localPlayerId });
   }
   submitChoice(choice: DecisionSide): void {
     this.send({
@@ -117,14 +122,14 @@ export class RoomSession {
       this.handleSubmitChoice(this.state.localPlayerId, choice);
     }
   }
-  submitStayExit(choice: StayExitChoice): void {
+  submitStayBank(choice: StayBankChoice): void {
     this.send({
-      type: 'submitStayExit',
+      type: 'submitStayBank',
       playerId: this.state.localPlayerId,
       choice,
     });
     if (this.isHost) {
-      this.handleSubmitStayExit(this.state.localPlayerId, choice);
+      this.handleSubmitStayBank(this.state.localPlayerId, choice);
     }
   }
   destroy(): void {
@@ -203,7 +208,7 @@ export class RoomSession {
     const connection = peer.connect(roomCode, { reliable: true });
     this.hostConnection = connection;
     this.registerConnection(connection);
-    await this.waitForOpen(connection);
+    await this.waitForOpen(connection, { peer, timeoutMs: 12_000 });
     this.send({ type: 'join', name: playerName, playerId }, connection);
   }
   private createPeer(id?: string): Promise<Peer> {
@@ -221,19 +226,42 @@ export class RoomSession {
       peer.once('error', onError);
     });
   }
-  private waitForOpen(connection: DataConnection): Promise<void> {
+  private waitForOpen(
+    connection: DataConnection,
+    options?: { peer?: Peer; timeoutMs?: number },
+  ): Promise<void> {
     if (connection.open) return Promise.resolve();
+    const timeoutMs = options?.timeoutMs ?? 12_000;
+    const peer = options?.peer;
     return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        cleanup();
+        reject(new Error('Could not reach the host. Try rejoining the room.'));
+      }, timeoutMs);
+
+      const cleanup = () => {
+        clearTimeout(timer);
+        connection.off('open', onOpen);
+        connection.off('error', onConnError);
+        peer?.off('error', onPeerError);
+      };
+
       const onOpen = () => {
-        connection.off('error', onError);
+        cleanup();
         resolve();
       };
-      const onError = (error: Error) => {
-        connection.off('open', onOpen);
+      const onConnError = (error: Error) => {
+        cleanup();
         reject(error);
       };
+      const onPeerError = (error: Error) => {
+        cleanup();
+        reject(error);
+      };
+
       connection.once('open', onOpen);
-      connection.once('error', onError);
+      connection.once('error', onConnError);
+      peer?.on('error', onPeerError);
     });
   }
   private registerConnection(connection: DataConnection, playerIdHint?: string): void {
@@ -272,13 +300,14 @@ export class RoomSession {
       case 'submitChoice':
         if (this.isHost) this.handleSubmitChoice(message.playerId, message.choice);
         break;
-      case 'submitStayExit':
-        if (this.isHost) this.handleSubmitStayExit(message.playerId, message.choice);
+      case 'submitStayBank':
+        if (this.isHost) this.handleSubmitStayBank(message.playerId, message.choice);
         break;
       case 'requestState':
         if (this.isHost) {
           this.mapConnectionToPlayer(connection, message.playerId);
-          this.send({ type: 'stateSync', state: toPublicState(this.state) }, connection);
+          this.broadcast({ type: 'stateSync', state: toPublicState(this.state) });
+          this.emitState();
         }
         break;
       case 'joinAck':
@@ -385,12 +414,13 @@ export class RoomSession {
     }
     if (this.state.phase !== 'lobby') return;
     this.pendingDecisions.clear();
-    this.pendingStayExit.clear();
+    this.pendingStayBank.clear();
     const card = dealCard(getActiveChoosers(this.state.players).length);
     this.state = {
       ...this.state,
       phase: 'choosing',
       round: 1,
+      roundNumber: 1,
       blockNumber: 1,
       choiceIndexInBlock: 1,
       currentCard: card,
@@ -399,7 +429,7 @@ export class RoomSession {
     this.broadcast({ type: 'start', startedBy });
     this.broadcast({ type: 'stateSync', state: toPublicState(this.state) });
     this.emitState();
-    this.emitNotice('The game begins. Make your choice.');
+    this.emitNotice(`Round 1 of ${ROUNDS_PER_RUN} begins. Make your choice.`);
   }
   private handleSubmitChoice(playerId: string, choice: DecisionSide): void {
     if (!this.isHost || this.state.phase !== 'choosing') return;
@@ -415,18 +445,18 @@ export class RoomSession {
       this.resolveCurrentChoice();
     }
   }
-  private handleSubmitStayExit(playerId: string, choice: StayExitChoice): void {
-    if (!this.isHost || this.state.phase !== 'stayOrExit') return;
+  private handleSubmitStayBank(playerId: string, choice: StayBankChoice): void {
+    if (!this.isHost || this.state.phase !== 'stayOrBank') return;
     const player = this.state.players.find((entry) => entry.id === playerId);
     if (!player?.connected || player.status !== 'alive' || player.hasSubmitted) return;
-    this.pendingStayExit.set(playerId, choice);
+    this.pendingStayBank.set(playerId, choice);
     this.state.players = this.state.players.map((entry) =>
       entry.id === playerId ? { ...entry, hasSubmitted: true } : entry,
     );
     this.broadcast({ type: 'stateSync', state: toPublicState(this.state) });
     this.emitState();
     if (allActiveSubmitted(this.state.players)) {
-      this.resolveStayExitCheckpoint();
+      this.resolveStayBankCheckpoint();
     }
   }
   private resolveCurrentChoice(): void {
@@ -439,22 +469,14 @@ export class RoomSession {
     );
     this.pendingDecisions.clear();
     if (!hasAlivePlayers(updatedPlayers)) {
-      this.state = {
-        ...this.state,
-        phase: 'finished',
-        currentCard: null,
-        players: updatedPlayers,
-      };
-      this.broadcast({ type: 'roundResult', state: toPublicState(this.state) });
-      this.emitState();
-      this.emitNotice('The run is over. Check your banked gold.');
+      this.advanceRoundOrFinish(updatedPlayers);
       return;
     }
     const nextChoiceIndex = this.state.choiceIndexInBlock + 1;
-    if (shouldOfferStayExit(this.state.choiceIndexInBlock)) {
+    if (shouldOfferStayBank(this.state.choiceIndexInBlock)) {
       this.state = {
         ...this.state,
-        phase: 'stayOrExit',
+        phase: 'stayOrBank',
         round: this.state.round + 1,
         choiceIndexInBlock: nextChoiceIndex,
         currentCard: null,
@@ -462,7 +484,7 @@ export class RoomSession {
       };
       this.broadcast({ type: 'roundResult', state: toPublicState(this.state) });
       this.emitState();
-      this.emitNotice('Four choices done. Stay in or bank your gold?');
+      this.emitNotice('Four choices done. Stay in or bank your gold for this round?');
       this.maybeFinishAfterPlayerChange();
       return;
     }
@@ -480,67 +502,76 @@ export class RoomSession {
     this.emitNotice(`Choice ${this.state.choiceIndexInBlock} of 4.`);
     this.maybeFinishAfterPlayerChange();
   }
-  private resolveStayExitCheckpoint(): void {
+  private resolveStayBankCheckpoint(): void {
     if (!this.isHost) return;
     this.updateState({ phase: 'resolving' });
-    const updatedPlayers = resolveStayExit(this.state.players, this.pendingStayExit);
-    this.pendingStayExit.clear();
-    if (isRunFinished(updatedPlayers)) {
+    const updatedPlayers = resolveStayBank(this.state.players, this.pendingStayBank);
+    this.pendingStayBank.clear();
+    if (hasAlivePlayers(updatedPlayers)) {
+      const nextCard = dealCard(getActiveChoosers(updatedPlayers).length);
       this.state = {
         ...this.state,
-        phase: 'finished',
-        currentCard: null,
+        phase: 'choosing',
+        round: this.state.round + 1,
+        blockNumber: this.state.blockNumber + 1,
+        choiceIndexInBlock: 1,
+        currentCard: nextCard,
         players: updatedPlayers,
       };
       this.broadcast({ type: 'roundResult', state: toPublicState(this.state) });
       this.emitState();
-      this.emitNotice('The run is over. Check your banked gold.');
+      this.emitNotice(`Block ${this.state.blockNumber} begins. Make your choice.`);
       return;
     }
-    if (!hasAlivePlayers(updatedPlayers)) {
+    this.advanceRoundOrFinish(updatedPlayers);
+  }
+  private advanceRoundOrFinish(players: Player[]): void {
+    if (!this.isHost || !isRoundOver(players)) return;
+
+    if (shouldStartNextRound(this.state.roundNumber, players)) {
+      const nextRound = this.state.roundNumber + 1;
+      const revived = prepareNextRound(players);
+      const nextCard = dealCard(getActiveChoosers(revived).length);
       this.state = {
         ...this.state,
-        phase: 'finished',
-        currentCard: null,
-        players: updatedPlayers,
+        phase: 'choosing',
+        round: this.state.round + 1,
+        roundNumber: nextRound,
+        blockNumber: 1,
+        choiceIndexInBlock: 1,
+        currentCard: nextCard,
+        players: revived,
       };
       this.broadcast({ type: 'roundResult', state: toPublicState(this.state) });
       this.emitState();
-      this.emitNotice('The run is over. Check your banked gold.');
+      this.emitNotice(
+        `Round ${nextRound} of ${ROUNDS_PER_RUN} — healed. Make your choice.`,
+      );
       return;
     }
-    const nextCard = dealCard(getActiveChoosers(updatedPlayers).length);
+
     this.state = {
       ...this.state,
-      phase: 'choosing',
-      blockNumber: this.state.blockNumber + 1,
-      choiceIndexInBlock: 1,
-      currentCard: nextCard,
-      players: updatedPlayers,
+      phase: 'finished',
+      currentCard: null,
+      players,
     };
     this.broadcast({ type: 'roundResult', state: toPublicState(this.state) });
     this.emitState();
-    this.emitNotice(`Block ${this.state.blockNumber} begins. Make your choice.`);
+    this.emitNotice('The run is over. Check your banked gold.');
   }
   private maybeFinishAfterPlayerChange(): void {
     if (!this.isHost) return;
-    if (isRunFinished(this.state.players)) {
-      this.state = {
-        ...this.state,
-        phase: 'finished',
-        currentCard: null,
-      };
-      this.broadcast({ type: 'stateSync', state: toPublicState(this.state) });
-      this.emitState();
-      this.emitNotice('The run is over. Check your banked gold.');
+    if (isRoundOver(this.state.players)) {
+      this.advanceRoundOrFinish(this.state.players);
       return;
     }
     if (this.state.phase === 'choosing' && allActiveSubmitted(this.state.players)) {
       this.resolveCurrentChoice();
       return;
     }
-    if (this.state.phase === 'stayOrExit' && allActiveSubmitted(this.state.players)) {
-      this.resolveStayExitCheckpoint();
+    if (this.state.phase === 'stayOrBank' && allActiveSubmitted(this.state.players)) {
+      this.resolveStayBankCheckpoint();
     }
   }
   private handleConnectionClosed(connection: DataConnection, playerId: string): void {
@@ -564,7 +595,7 @@ export class RoomSession {
     if (!player) return;
     this.connections.delete(playerId);
     this.pendingDecisions.delete(playerId);
-    this.pendingStayExit.delete(playerId);
+    this.pendingStayBank.delete(playerId);
     const inGame = isInGamePhase(this.state.phase);
     this.state.players = this.state.players.map((entry) =>
       entry.id === playerId ? markDisconnectedInGame(entry, inGame) : entry,
@@ -586,34 +617,70 @@ export class RoomSession {
   private async beginHostMigration(): Promise<void> {
     if (this.migrationInProgress || this.destroyed) return;
     this.migrationInProgress = true;
+
+    const departedHostId = this.state.hostPlayerId;
+    const inGame = isInGamePhase(this.state.phase);
+
+    // Mark the departed host offline before electing so joinOrder cannot re-pick them.
+    this.state.players = this.state.players.map((player) =>
+      player.id === departedHostId ? markDisconnectedInGame(player, inGame) : player,
+    );
+
     const remaining = this.state.players.filter((player) => player.connected);
     if (remaining.length === 0) {
       this.emitError('Everyone left the room.');
       this.destroy();
       return;
     }
+
     const newHostId = electHost(this.state.players);
     if (!newHostId) {
       this.emitError('Could not elect a new host.');
       this.destroy();
       return;
     }
-    this.state.players = this.state.players.map((player) =>
-      player.id === this.state.hostPlayerId
-        ? markDisconnectedInGame(player, isInGamePhase(this.state.phase))
-        : player,
-    );
+
     this.state.hostPlayerId = newHostId;
     this.pendingDecisions.clear();
-    this.pendingStayExit.clear();
+    this.pendingStayBank.clear();
+
+    // Pending choice maps lived only on the old host — reopen the current beat.
+    if (inGame) {
+      if (this.state.phase === 'resolving') {
+        this.state.phase = this.state.currentCard ? 'choosing' : 'stayOrBank';
+      }
+      if (this.state.phase === 'choosing' || this.state.phase === 'stayOrBank') {
+        this.state.players = this.state.players.map((player) => ({
+          ...player,
+          hasSubmitted: false,
+        }));
+      }
+    }
+
     if (newHostId === this.state.localPlayerId) {
-      await this.promoteToHost();
+      try {
+        await this.promoteToHost();
+        if (inGame && (this.state.phase === 'choosing' || this.state.phase === 'stayOrBank')) {
+          this.emitNotice('Host left. Resubmit your choice to continue.');
+        }
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : 'Failed to take over as host.';
+        this.emitError(message);
+        this.migrationInProgress = false;
+        return;
+      }
     } else {
       await this.reconnectToHost();
     }
+
     this.migrationInProgress = false;
     if (this.isHost && isInGamePhase(this.state.phase)) {
-      this.maybeFinishAfterPlayerChange();
+      // Only advance if the round ended (e.g. departed host was last alive).
+      // Do not resolve the beat — submissions were cleared above.
+      if (isRoundOver(this.state.players)) {
+        this.advanceRoundOrFinish(this.state.players);
+      }
     }
   }
   private async promoteToHost(): Promise<void> {
@@ -625,6 +692,9 @@ export class RoomSession {
     this.hostConnection = null;
     this.peer?.destroy();
     this.isHost = true;
+
+    // Brief delay so the departed host's PeerJS id can free before we claim it.
+    await new Promise((resolve) => setTimeout(resolve, 800));
     await this.initHostPeer(this.state.roomCode);
     this.broadcast({
       type: 'hostHandoff',
@@ -648,25 +718,48 @@ export class RoomSession {
     this.hostConnection = null;
     this.peer?.destroy();
     this.isHost = false;
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    try {
-      const peer = await this.createPeer();
-      this.peer = peer;
-      const connection = peer.connect(this.state.roomCode, { reliable: true });
-      this.hostConnection = connection;
-      this.registerConnection(connection);
-      await this.waitForOpen(connection);
-      this.send(
-        {
-          type: 'requestState',
-          playerId: this.state.localPlayerId,
-        },
-        connection,
-      );
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Reconnection failed.';
-      this.emitError(message);
+
+    const maxAttempts = 3;
+    let lastError: unknown;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      // Stagger past the new host claiming the room PeerJS id.
+      await new Promise((resolve) => setTimeout(resolve, attempt === 1 ? 1200 : 1500));
+      if (this.destroyed) return;
+
+      try {
+        const peer = await this.createPeer();
+        this.peer = peer;
+        peer.on('error', (error) => {
+          if (!this.destroyed && !this.migrationInProgress) {
+            this.emitError(error.message);
+          }
+        });
+        const connection = peer.connect(this.state.roomCode, { reliable: true });
+        this.hostConnection = connection;
+        this.registerConnection(connection);
+        await this.waitForOpen(connection, { peer, timeoutMs: 10_000 });
+        this.send(
+          {
+            type: 'requestState',
+            playerId: this.state.localPlayerId,
+          },
+          connection,
+        );
+        return;
+      } catch (error) {
+        lastError = error;
+        this.hostConnection = null;
+        this.peer?.destroy();
+        this.peer = null;
+      }
     }
+
+    const message =
+      lastError instanceof Error
+        ? lastError.message
+        : 'Reconnection failed. Try rejoining the room.';
+    this.emitError(message);
   }
   private handleHostHandoff(
     message: Extract<RoomMessage, { type: 'hostHandoff' }>,

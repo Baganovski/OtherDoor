@@ -2,16 +2,17 @@ export const MIN_PLAYERS = 2;
 export const MAX_PLAYERS = 6;
 export const STARTING_HEALTH = 10;
 export const CHOICES_PER_BLOCK = 4;
-/** Demo bots stay when above this HP; otherwise they exit at the checkpoint. */
+export const ROUNDS_PER_RUN = 3;
+/** Demo bots usually bank near this HP at stay/bank checkpoints (with light jitter). */
 export const BOT_EXIT_HEALTH_THRESHOLD = 5;
 
-export type GamePhase = 'lobby' | 'choosing' | 'resolving' | 'stayOrExit' | 'finished';
+export type GamePhase = 'lobby' | 'choosing' | 'resolving' | 'stayOrBank' | 'finished';
 
 export type PlayerStatus = 'alive' | 'dead' | 'exited';
 
 export type DecisionSide = 'a' | 'b';
 
-export type StayExitChoice = 'stay' | 'exit';
+export type StayBankChoice = 'stay' | 'bank';
 
 export interface Player {
   id: string;
@@ -36,7 +37,10 @@ export interface DealtCard {
 export interface GameState {
   roomCode: string;
   phase: GamePhase;
+  /** Internal decision-beat counter (not the 1–3 run round). */
   round: number;
+  /** Run round index (1…ROUNDS_PER_RUN during play). */
+  roundNumber: number;
   blockNumber: number;
   choiceIndexInBlock: number;
   currentCard: DealtCard | null;
@@ -52,7 +56,7 @@ export type RoomMessage =
   | { type: 'start'; startedBy: string }
   | { type: 'stateSync'; state: PublicGameState }
   | { type: 'submitChoice'; playerId: string; choice: DecisionSide }
-  | { type: 'submitStayExit'; playerId: string; choice: StayExitChoice }
+  | { type: 'submitStayBank'; playerId: string; choice: StayBankChoice }
   | { type: 'roundResult'; state: PublicGameState }
   | { type: 'playerLeft'; playerId: string; players: Player[] }
   | { type: 'hostHandoff'; newHostPlayerId: string; state: PublicGameState }

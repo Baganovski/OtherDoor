@@ -115,7 +115,7 @@ export const CARD_DEFINITIONS: CardDefinition[] = [
       },
     },
     optionB: {
-      label: '50% chance to receive 1 damage',
+      label: '50% chance to take 1 damage',
       effect: { type: 'chanceDamage', minChance: 50, maxChance: 50, damage: 1, rollKey: 'b.chance' },
     },
   },

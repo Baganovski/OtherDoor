@@ -7,6 +7,7 @@ interface ChoicePanelProps {
   disabled: boolean;
   onSubmit: (choice: DecisionSide) => void;
   roundKey?: string | number;
+  isDemo?: boolean;
 }
 
 export function ChoicePanel({
@@ -14,10 +15,12 @@ export function ChoicePanel({
   disabled,
   onSubmit,
   roundKey,
+  isDemo = false,
 }: ChoicePanelProps) {
   const [selected, setSelected] = useState<DecisionSide | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const locked = disabled || selected !== null;
+  const waitingFor = isDemo ? 'CPUs' : 'other players';
 
   useEffect(() => {
     setSelected(null);
@@ -35,8 +38,8 @@ export function ChoicePanel({
 
   const hint = locked
     ? selected
-      ? `Selection made: ${selected.toUpperCase()}. Waiting for other players…`
-      : 'Selection made. Waiting for other players…'
+      ? `Selection made: ${selected.toUpperCase()}. Waiting for ${waitingFor}…`
+      : `Selection made. Waiting for ${waitingFor}…`
     : 'Tap a decision to lock it in.';
 
   return (
