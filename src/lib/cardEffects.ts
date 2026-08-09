@@ -36,6 +36,8 @@ export interface CardDefinition {
   weight: CardWeight;
   /** Minimum alive choosers required to deal this card. Default 2. */
   minPlayers?: number;
+  /** Maximum alive choosers allowed to deal this card. Default unlimited. */
+  maxPlayers?: number;
   optionA: CardOption;
   optionB: CardOption;
 }

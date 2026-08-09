@@ -93,8 +93,14 @@ export function TypewriterText({
 
   return (
     <Tag className={classes} aria-label={text}>
-      <span aria-hidden="true">{shown}</span>
-      {typing && <span className="typewriter-caret" aria-hidden="true" />}
+      {/* Invisible full text reserves final layout so typing doesn't shift the page */}
+      <span className="typewriter-reserve" aria-hidden="true">
+        {text}
+      </span>
+      <span className="typewriter-live" aria-hidden="true">
+        {shown}
+        {typing && <span className="typewriter-caret" />}
+      </span>
     </Tag>
   );
 }

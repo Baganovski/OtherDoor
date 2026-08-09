@@ -146,6 +146,54 @@ export const CARD_DEFINITIONS: CardDefinition[] = [
     },
   },
   {
+    id: 'blood-toll',
+    title: 'Blood toll',
+    weight: 'common',
+    minPlayers: 1,
+    maxPlayers: 1,
+    optionA: {
+      label: 'Take 2 damage, receive 3 gold',
+      effect: {
+        type: 'composite',
+        effects: [
+          { type: 'takeDamage', amount: 2 },
+          { type: 'receiveGold', amount: 3 },
+        ],
+      },
+    },
+    optionB: {
+      label: 'Take 1 damage, receive 1 gold',
+      effect: {
+        type: 'composite',
+        effects: [
+          { type: 'takeDamage', amount: 1 },
+          { type: 'receiveGold', amount: 1 },
+        ],
+      },
+    },
+  },
+  {
+    id: 'spike-or-grind',
+    title: 'Spike or grind',
+    weight: 'common',
+    minPlayers: 1,
+    maxPlayers: 1,
+    optionA: {
+      label: '20–35% chance to take 5 damage',
+      effect: { type: 'chanceDamage', minChance: 20, maxChance: 35, damage: 5, rollKey: 'a.chance' },
+    },
+    optionB: {
+      label: 'Take 2 damage, receive 2 gold',
+      effect: {
+        type: 'composite',
+        effects: [
+          { type: 'takeDamage', amount: 2 },
+          { type: 'receiveGold', amount: 2 },
+        ],
+      },
+    },
+  },
+  {
     id: 'majority-gold',
     title: 'Majority gold',
     weight: 'uncommon',
@@ -197,7 +245,7 @@ export const CARD_DEFINITIONS: CardDefinition[] = [
   },
   {
     id: 'double-or-nothing',
-    title: 'Double or nothing',
+    title: 'Triple or trouble',
     weight: 'uncommon',
     optionA: { label: 'Receive 1 gold', effect: { type: 'receiveGold', amount: 1 } },
     optionB: {
@@ -245,8 +293,62 @@ export const CARD_DEFINITIONS: CardDefinition[] = [
     },
   },
   {
+    id: 'greedy-cut',
+    title: 'Greedy cut',
+    weight: 'uncommon',
+    minPlayers: 1,
+    maxPlayers: 1,
+    optionA: {
+      label: 'Receive 3 gold, then 55–75% chance to take 3 damage',
+      effect: {
+        type: 'goldThenChanceDamage',
+        gold: 3,
+        minChance: 55,
+        maxChance: 75,
+        damage: 3,
+        rollKey: 'a.chance',
+      },
+    },
+    optionB: {
+      label: 'Take 1 damage, receive 1 gold',
+      effect: {
+        type: 'composite',
+        effects: [
+          { type: 'takeDamage', amount: 1 },
+          { type: 'receiveGold', amount: 1 },
+        ],
+      },
+    },
+  },
+  {
+    id: 'all-in-alone',
+    title: 'All in alone',
+    weight: 'uncommon',
+    minPlayers: 1,
+    maxPlayers: 1,
+    optionA: {
+      label: '50% chance to receive 5 gold or take 4 damage',
+      effect: {
+        type: 'doubleOrNothing',
+        winGold: 5,
+        loseDamage: 4,
+        rollKey: 'a.win',
+      },
+    },
+    optionB: {
+      label: 'Take 3 damage, receive 4 gold',
+      effect: {
+        type: 'composite',
+        effects: [
+          { type: 'takeDamage', amount: 3 },
+          { type: 'receiveGold', amount: 4 },
+        ],
+      },
+    },
+  },
+  {
     id: 'heal-or-gold',
-    title: 'Heal or Gold',
+    title: 'Heal or gold',
     weight: 'rare',
     optionA: {
       label: 'Heal 1–3 health',

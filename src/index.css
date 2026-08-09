@@ -123,7 +123,7 @@ button {
 .brand {
   margin: 0 0 0.75rem;
   font-family: var(--font-display);
-  font-size: clamp(2.4rem, 10vw, 3.4rem);
+  font-size: clamp(1.85rem, 7.5vw, 2.55rem);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--accent-bright);
@@ -617,6 +617,12 @@ button {
   min-height: 1.4em;
 }
 
+.choice-disclaimer {
+  font-size: 0.8rem;
+  min-height: 0;
+  opacity: 0.9;
+}
+
 .choice-grid {
   display: grid;
   gap: 0.65rem;
@@ -701,8 +707,23 @@ button {
   color: var(--text);
 }
 
+.typewriter {
+  position: relative;
+}
+
 span.typewriter {
-  display: inline;
+  display: inline-block;
+}
+
+.typewriter-reserve {
+  visibility: hidden;
+  display: block;
+  pointer-events: none;
+}
+
+.typewriter-live {
+  position: absolute;
+  inset: 0;
 }
 
 .typewriter-caret {

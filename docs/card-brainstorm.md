@@ -12,6 +12,8 @@ On cards where the outcome depends on the majority: if there is no majority (eve
 
 Cards that need a true minority (or otherwise require 3+ choosers) are tagged `minPlayers: 3` in code and are not dealt when only 2 players remain.
 
+Cards for the last remaining player are tagged `minPlayers: 1` and `maxPlayers: 1` (`**Max players:** 1` in this doc) and are only dealt when exactly one alive chooser remains. Those pairs are harder so the round ends faster.
+
 **Weight** controls how often a pair is offered: `common` > `uncommon` > `rare`. Healing should stay rare — prefer gold and damage for most pairs.
 
 Entries are **numbered** and **ordered by weight** (common → uncommon → rare). When adding a pair, insert it in the right section and renumber all entries.
@@ -126,7 +128,29 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 
 ---
 
-## 12. Majority gold
+## 12. Blood toll
+
+**Weight:** common
+
+**Max players:** 1
+
+- Take 2 damage, receive 3 gold
+- Take 1 damage, receive 1 gold
+
+---
+
+## 13. Spike or grind
+
+**Weight:** common
+
+**Max players:** 1
+
+- 20-35% chance to take 5 damage
+- Take 2 damage, receive 2 gold
+
+---
+
+## 14. Majority gold
 
 **Weight:** uncommon
 
@@ -135,7 +159,7 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 
 ---
 
-## 13. Minority reward
+## 15. Minority reward
 
 **Weight:** uncommon
 
@@ -146,7 +170,7 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 
 ---
 
-## 14. Everyone wins
+## 16. Everyone wins
 
 **Weight:** uncommon
 
@@ -155,7 +179,7 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 
 ---
 
-## 15. Betrayal bait
+## 17. Betrayal bait
 
 **Weight:** uncommon
 
@@ -164,7 +188,7 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 
 ---
 
-## 16. Double or nothing
+## 18. Double or nothing
 
 **Weight:** uncommon
 
@@ -173,7 +197,7 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 
 ---
 
-## 17. Lonely purse
+## 19. Lonely purse
 
 **Weight:** uncommon
 
@@ -182,7 +206,7 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 
 ---
 
-## 18. All-in gold
+## 20. All-in gold
 
 **Weight:** uncommon
 
@@ -191,7 +215,7 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 
 ---
 
-## 19. Crowd or fringe
+## 21. Crowd or fringe
 
 **Weight:** uncommon
 
@@ -202,7 +226,29 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 
 ---
 
-## 20. Heal or Gold
+## 22. Greedy cut
+
+**Weight:** uncommon
+
+**Max players:** 1
+
+- Receive 3 gold, then 55-75% chance to take 3 damage
+- Take 1 damage, receive 1 gold
+
+---
+
+## 23. All in alone
+
+**Weight:** uncommon
+
+**Max players:** 1
+
+- 50% chance to receive 5 gold or take 4 damage
+- Take 3 damage, receive 4 gold
+
+---
+
+## 24. Heal or Gold
 
 **Weight:** rare
 

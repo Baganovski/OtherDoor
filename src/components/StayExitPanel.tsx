@@ -10,6 +10,7 @@ interface StayExitPanelProps {
 
 const STAY_DETAIL = 'Keep playing this round with your unbanked gold at risk';
 const BANK_DETAIL = 'Bank your gold and sit out the rest of this round';
+const LAST_PLAYER_DISCLAIMER = 'If only one player remains, the next choices get harder.';
 
 export function StayExitPanel({
   disabled,
@@ -45,6 +46,7 @@ export function StayExitPanel({
   return (
     <div ref={panelRef} className={`choice-panel${locked ? ' choice-panel-locked' : ''}`}>
       <p className="choice-hint">{hint}</p>
+      <p className="choice-hint choice-disclaimer">{LAST_PLAYER_DISCLAIMER}</p>
       <div className="choice-grid choice-grid-two">
         <button
           type="button"
