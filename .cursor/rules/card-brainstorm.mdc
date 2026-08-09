@@ -44,5 +44,6 @@ If the crowded case is just “no reward,” omit it — `if only you pick this`
 
 - Ranges (`1-3`, `10-30%`): the computer picks the value within the range.
 - Majority cards: if there is no majority (even split), nothing happens.
+- Cards that need a true minority (or otherwise require 3+ choosers) use optional `**Min players:** 3` in the brainstorm entry and `minPlayers: 3` in code; they are not dealt when fewer choosers remain.
 - **Weight** (`common` | `uncommon` | `rare`): how often a pair is offered.
 - Entries numbered and ordered common → uncommon → rare; renumber when adding.

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { StayExitChoice } from '../types/game';
 
 interface StayExitPanelProps {
@@ -16,10 +16,15 @@ export function StayExitPanel({
   roundKey,
 }: StayExitPanelProps) {
   const [selected, setSelected] = useState<StayExitChoice | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const locked = disabled || selected !== null;
 
   useEffect(() => {
     setSelected(null);
+    const active = document.activeElement;
+    if (active instanceof HTMLElement && panelRef.current?.contains(active)) {
+      active.blur();
+    }
   }, [roundKey]);
 
   const handleSelect = (choice: StayExitChoice) => {
@@ -35,7 +40,7 @@ export function StayExitPanel({
     : 'Bank your gold and leave, or stay for another four choices.';
 
   return (
-    <div className={`choice-panel${locked ? ' choice-panel-locked' : ''}`}>
+    <div ref={panelRef} className={`choice-panel${locked ? ' choice-panel-locked' : ''}`}>
       <p className="choice-hint">{hint}</p>
       <div className="choice-grid choice-grid-two">
         <button

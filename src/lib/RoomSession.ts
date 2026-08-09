@@ -12,6 +12,7 @@ import { MAX_PLAYERS, MIN_PLAYERS } from '../types/game';
 import {
   allActiveSubmitted,
   dealCard,
+  getActiveChoosers,
   hasAlivePlayers,
   isRunFinished,
   resolveCardRound,
@@ -385,7 +386,7 @@ export class RoomSession {
     if (this.state.phase !== 'lobby') return;
     this.pendingDecisions.clear();
     this.pendingStayExit.clear();
-    const card = dealCard();
+    const card = dealCard(getActiveChoosers(this.state.players).length);
     this.state = {
       ...this.state,
       phase: 'choosing',
@@ -465,7 +466,7 @@ export class RoomSession {
       this.maybeFinishAfterPlayerChange();
       return;
     }
-    const nextCard = dealCard();
+    const nextCard = dealCard(getActiveChoosers(updatedPlayers).length);
     this.state = {
       ...this.state,
       phase: 'choosing',
@@ -508,7 +509,7 @@ export class RoomSession {
       this.emitNotice('The run is over. Check your banked gold.');
       return;
     }
-    const nextCard = dealCard();
+    const nextCard = dealCard(getActiveChoosers(updatedPlayers).length);
     this.state = {
       ...this.state,
       phase: 'choosing',

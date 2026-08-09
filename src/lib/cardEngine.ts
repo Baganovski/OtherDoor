@@ -1,6 +1,6 @@
 import { CARD_DEFINITIONS } from '../data/cards';
 import type { CardDefinition } from './cardEffects';
-import { applyCardEffect, rollCardValues } from './cardEffects';
+import { applyCardEffect, resolveOptionLabel, rollCardValues } from './cardEffects';
 import type { DealtCard, DecisionSide, Player, StayExitChoice } from '../types/game';
 import { CHOICES_PER_BLOCK, STARTING_HEALTH } from '../types/game';
 
@@ -10,15 +10,17 @@ export function getCardById(id: string): CardDefinition | undefined {
   return CARD_DEFINITIONS.find((card) => card.id === id);
 }
 
-export function dealCard(): DealtCard {
-  const totalWeight = CARD_DEFINITIONS.reduce(
-    (sum, card) => sum + WEIGHT_VALUES[card.weight],
-    0,
+export function dealCard(chooserCount: number): DealtCard {
+  const pool = CARD_DEFINITIONS.filter(
+    (card) => chooserCount >= (card.minPlayers ?? 2),
   );
+  const deck = pool.length > 0 ? pool : CARD_DEFINITIONS;
+
+  const totalWeight = deck.reduce((sum, card) => sum + WEIGHT_VALUES[card.weight], 0);
   let roll = Math.random() * totalWeight;
 
-  let selected = CARD_DEFINITIONS[0];
-  for (const card of CARD_DEFINITIONS) {
+  let selected = deck[0];
+  for (const card of deck) {
     roll -= WEIGHT_VALUES[card.weight];
     if (roll <= 0) {
       selected = card;
@@ -31,8 +33,12 @@ export function dealCard(): DealtCard {
   return {
     id: selected.id,
     title: selected.title,
-    optionA: { label: selected.optionA.label },
-    optionB: { label: selected.optionB.label },
+    optionA: {
+      label: resolveOptionLabel(selected.optionA.label, selected.optionA.effect, rolls),
+    },
+    optionB: {
+      label: resolveOptionLabel(selected.optionB.label, selected.optionB.effect, rolls),
+    },
     rolls,
   };
 }

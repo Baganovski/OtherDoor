@@ -306,6 +306,69 @@ button {
   color: var(--accent-bright);
 }
 
+.join-code-static {
+  display: inline-block;
+  cursor: default;
+}
+
+.player-count-fieldset {
+  border: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.player-count-fieldset legend {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  padding: 0;
+}
+
+.player-count-hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.player-count-options {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.player-count-option {
+  display: block;
+  cursor: pointer;
+}
+
+.player-count-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.player-count-option span {
+  display: grid;
+  place-items: center;
+  min-height: 2.75rem;
+  border: 1px solid rgba(42, 34, 26, 0.45);
+  background: rgba(255, 252, 245, 0.85);
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+}
+
+.player-count-option input:checked + span {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.player-count-option input:focus-visible + span {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
 .room-main {
   max-width: 32rem;
   margin: 0 auto;
@@ -506,6 +569,36 @@ button {
   opacity: 0.55;
 }
 
+.hud-row-you {
+  background: rgba(255, 250, 240, 0.8);
+  margin: 0 -0.85rem;
+  padding-left: calc(0.85rem - 3px);
+  padding-right: 0.85rem;
+  border-left: 3px solid var(--line);
+}
+
+.hud-row-you .hud-name {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.next-selection-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 5rem;
+  padding: 1.5rem 1rem;
+}
+
+.next-selection-text {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 7vw, 3rem);
+  letter-spacing: 0.14em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
 .stat-lost .stat-value {
   color: var(--danger);
 }
@@ -541,8 +634,20 @@ button {
   transition: opacity 0.2s ease, background 0.2s ease, border-color 0.2s ease;
 }
 
-.choice-btn:not(:disabled):hover {
-  background: var(--accent-soft);
+@media (hover: hover) and (pointer: fine) {
+  .choice-btn:not(:disabled):hover {
+    border-color: rgba(42, 34, 26, 0.55);
+    background: rgba(255, 252, 245, 0.98);
+  }
+}
+
+.choice-btn:focus {
+  outline: none;
+}
+
+.choice-btn:focus-visible {
+  outline: 2px solid rgba(42, 34, 26, 0.45);
+  outline-offset: 2px;
 }
 
 .choice-btn:not(:disabled):active {

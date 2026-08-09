@@ -2,6 +2,8 @@ export const MIN_PLAYERS = 2;
 export const MAX_PLAYERS = 6;
 export const STARTING_HEALTH = 10;
 export const CHOICES_PER_BLOCK = 4;
+/** Demo bots stay when above this HP; otherwise they exit at the checkpoint. */
+export const BOT_EXIT_HEALTH_THRESHOLD = 5;
 
 export type GamePhase = 'lobby' | 'choosing' | 'resolving' | 'stayOrExit' | 'finished';
 

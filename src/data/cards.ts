@@ -62,7 +62,7 @@ export const CARD_DEFINITIONS: CardDefinition[] = [
         rollKey: 'a.chance',
       },
     },
-    optionB: { label: 'Take 1 damage', effect: { type: 'takeDamage', amount: 1 } },
+    optionB: { label: 'Receive 1 gold', effect: { type: 'receiveGold', amount: 1 } },
   },
   {
     id: 'crowd-gold',
@@ -114,19 +114,22 @@ export const CARD_DEFINITIONS: CardDefinition[] = [
         ],
       },
     },
-    optionB: { label: 'Take 1 damage', effect: { type: 'takeDamage', amount: 1 } },
+    optionB: {
+      label: '50% chance to receive 1 damage',
+      effect: { type: 'chanceDamage', minChance: 50, maxChance: 50, damage: 1, rollKey: 'b.chance' },
+    },
   },
   {
     id: 'parity-gold',
     title: 'Parity gold',
     weight: 'common',
     optionA: {
-      label: 'Receive 2 gold if an odd number of players pick this',
-      effect: { type: 'parityGold', odd: 2, even: 0 },
+      label: 'Receive 1–2 gold if an odd number of players pick this',
+      effect: { type: 'parityGoldRange', match: 'odd', min: 1, max: 2, rollKey: 'a.gold' },
     },
     optionB: {
-      label: 'Receive 1 gold if an even number of players pick this',
-      effect: { type: 'parityGold', odd: 0, even: 1 },
+      label: 'Receive 1–2 gold if an even number of players pick this',
+      effect: { type: 'parityGoldRange', match: 'even', min: 1, max: 2, rollKey: 'b.gold' },
     },
   },
   {
@@ -159,6 +162,7 @@ export const CARD_DEFINITIONS: CardDefinition[] = [
     id: 'minority-reward',
     title: 'Minority reward',
     weight: 'uncommon',
+    minPlayers: 3,
     optionA: {
       label: 'If the minority picks this, receive 1 gold',
       effect: { type: 'minorityGold', amount: 1 },
@@ -187,7 +191,7 @@ export const CARD_DEFINITIONS: CardDefinition[] = [
     weight: 'uncommon',
     optionA: { label: 'Take 1 damage', effect: { type: 'takeDamage', amount: 1 } },
     optionB: {
-      label: 'Receive 2 gold if only you pick this or take 2 damage if more than one player picks this',
+      label: 'Receive 2 gold alone or take 2 damage if shared',
       effect: { type: 'betrayal', soloGold: 2, crowdDamage: 2 },
     },
   },
@@ -214,7 +218,7 @@ export const CARD_DEFINITIONS: CardDefinition[] = [
       label: 'Receive 4 gold if only you pick this',
       effect: { type: 'soloGold', minGold: 4, maxGold: 4 },
     },
-    optionB: { label: 'Receive 1 gold', effect: { type: 'receiveGold', amount: 1 } },
+    optionB: { label: 'Receive 2 gold', effect: { type: 'receiveGold', amount: 2 } },
   },
   {
     id: 'all-in-gold',
@@ -224,12 +228,13 @@ export const CARD_DEFINITIONS: CardDefinition[] = [
       label: 'If everyone picks this, receive 5 gold',
       effect: { type: 'everyoneGold', amount: 5 },
     },
-    optionB: { label: 'Receive 1 gold', effect: { type: 'receiveGold', amount: 1 } },
+    optionB: { label: 'Receive 2 gold', effect: { type: 'receiveGold', amount: 2 } },
   },
   {
     id: 'crowd-or-fringe',
     title: 'Crowd or fringe',
     weight: 'uncommon',
+    minPlayers: 3,
     optionA: {
       label: 'If the majority picks this, receive 2 gold',
       effect: { type: 'majorityGold', amount: 2 },

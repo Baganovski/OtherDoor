@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { DecisionSide } from '../types/game';
 import type { DealtCard } from '../types/game';
 
@@ -16,10 +16,15 @@ export function ChoicePanel({
   roundKey,
 }: ChoicePanelProps) {
   const [selected, setSelected] = useState<DecisionSide | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const locked = disabled || selected !== null;
 
   useEffect(() => {
     setSelected(null);
+    const active = document.activeElement;
+    if (active instanceof HTMLElement && panelRef.current?.contains(active)) {
+      active.blur();
+    }
   }, [roundKey, card.id]);
 
   const handleSelect = (choice: DecisionSide) => {
@@ -35,7 +40,7 @@ export function ChoicePanel({
     : 'Tap a decision to lock it in.';
 
   return (
-    <div className={`choice-panel${locked ? ' choice-panel-locked' : ''}`}>
+    <div ref={panelRef} className={`choice-panel${locked ? ' choice-panel-locked' : ''}`}>
       <p className="choice-hint">{hint}</p>
       <div className="choice-grid choice-grid-two">
         <button

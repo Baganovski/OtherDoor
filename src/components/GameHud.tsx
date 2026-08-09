@@ -1,4 +1,5 @@
 import type { PlayerStatus } from '../types/game';
+import { PlayerHudStats } from './PlayerHudStats';
 
 interface GameHudProps {
   players: Array<{
@@ -29,54 +30,50 @@ function statusLabel(status: PlayerStatus, connected: boolean): string {
 }
 
 export function GameHud({ players }: GameHudProps) {
+  const sortedPlayers = [...players].sort((a, b) => {
+    if (a.isYou) return -1;
+    if (b.isYou) return 1;
+    return 0;
+  });
+
   return (
     <div className="game-hud">
       <ul className="hud-list">
-        {players.map((player) => (
-          <li
-            key={player.id}
-            className={`hud-row hud-row-${player.status}${player.connected ? '' : ' hud-row-offline'}`}
-          >
-            <div className="hud-name">
-              <span>{player.name}</span>
-              {player.isYou && <span className="tag">you</span>}
-              <span className={`status-pill status-${player.status}`}>
-                {statusLabel(player.status, player.connected)}
-              </span>
-            </div>
-            <div className="hud-stats">
-              {player.status === 'alive' && player.connected && (
-                <>
-                  <span className="stat">
-                    <span className="stat-label">HP</span>
-                    <span className="stat-value">{player.health}</span>
+        {sortedPlayers.map((player) => {
+          const showHpGold = player.status === 'alive' && player.connected;
+          const showBanked = player.status === 'exited' || player.bankedGold > 0;
+          const showLost = player.status === 'dead';
+
+          return (
+            <li
+              key={player.id}
+              className={`hud-row hud-row-${player.status}${player.connected ? '' : ' hud-row-offline'}${player.isYou ? ' hud-row-you' : ''}`}
+            >
+              <div className="hud-name">
+                <span>{player.name}</span>
+                {player.isYou && <span className="tag">you</span>}
+                <span className={`status-pill status-${player.status}`}>
+                  {statusLabel(player.status, player.connected)}
+                </span>
+              </div>
+              <div className="hud-stats">
+                <PlayerHudStats
+                  health={player.health}
+                  money={player.money}
+                  bankedGold={player.bankedGold}
+                  showHpGold={showHpGold}
+                  showBanked={showBanked}
+                  showLost={showLost}
+                />
+                {showHpGold && (
+                  <span className={`decision-pill ${player.hasSubmitted ? 'ready' : 'waiting'}`}>
+                    {player.hasSubmitted ? 'Decision made' : 'Waiting'}
                   </span>
-                  <span className="stat">
-                    <span className="stat-label">Gold</span>
-                    <span className="stat-value">{player.money}</span>
-                  </span>
-                </>
-              )}
-              {(player.status === 'exited' || player.bankedGold > 0) && (
-                <span className="stat">
-                  <span className="stat-label">Banked</span>
-                  <span className="stat-value">{player.bankedGold}</span>
-                </span>
-              )}
-              {player.status === 'dead' && (
-                <span className="stat stat-lost">
-                  <span className="stat-label">Lost</span>
-                  <span className="stat-value">0</span>
-                </span>
-              )}
-              {player.status === 'alive' && player.connected && (
-                <span className={`decision-pill ${player.hasSubmitted ? 'ready' : 'waiting'}`}>
-                  {player.hasSubmitted ? 'Decision made' : 'Waiting'}
-                </span>
-              )}
-            </div>
-          </li>
-        ))}
+                )}
+              </div>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

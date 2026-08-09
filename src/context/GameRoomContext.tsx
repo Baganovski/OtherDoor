@@ -7,18 +7,23 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { DemoSession } from '../lib/DemoSession';
 import { RoomSession } from '../lib/RoomSession';
 import { generateRoomCode, normalizeRoomCode } from '../lib/roomCode';
 import { getOrCreatePlayerId } from '../lib/playerId';
 import type { DecisionSide, GameState, StayExitChoice } from '../types/game';
+
+type ActiveSession = RoomSession | DemoSession;
 
 interface GameRoomContextValue {
   state: GameState | null;
   notice: string | null;
   error: string | null;
   isConnecting: boolean;
+  isDemo: boolean;
   createRoom: (playerName: string) => Promise<void>;
   joinRoom: (roomCode: string, playerName: string) => Promise<void>;
+  startDemo: (playerName: string, totalPlayers: number) => void;
   startGame: () => void;
   submitChoice: (choice: DecisionSide) => void;
   submitStayExit: (choice: StayExitChoice) => void;
@@ -30,11 +35,12 @@ interface GameRoomContextValue {
 const GameRoomContext = createContext<GameRoomContextValue | null>(null);
 
 export function GameRoomProvider({ children }: { children: ReactNode }) {
-  const sessionRef = useRef<RoomSession | null>(null);
+  const sessionRef = useRef<ActiveSession | null>(null);
   const [state, setState] = useState<GameState | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isDemo, setIsDemo] = useState(false);
 
   const leaveRoom = useCallback(() => {
     sessionRef.current?.destroy();
@@ -43,6 +49,7 @@ export function GameRoomProvider({ children }: { children: ReactNode }) {
     setNotice(null);
     setError(null);
     setIsConnecting(false);
+    setIsDemo(false);
   }, []);
 
   const createRoom = useCallback(async (playerName: string) => {
@@ -60,6 +67,7 @@ export function GameRoomProvider({ children }: { children: ReactNode }) {
         onError: setError,
       });
       sessionRef.current = session;
+      setIsDemo(false);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to create room.';
       setError(message);
@@ -88,12 +96,26 @@ export function GameRoomProvider({ children }: { children: ReactNode }) {
         },
       );
       sessionRef.current = session;
+      setIsDemo(false);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to join room.';
       setError(message);
     } finally {
       setIsConnecting(false);
     }
+  }, [leaveRoom]);
+
+  const startDemo = useCallback((playerName: string, totalPlayers: number) => {
+    leaveRoom();
+    setError(null);
+    const playerId = getOrCreatePlayerId();
+    const session = DemoSession.create(playerName, playerId, totalPlayers, {
+      onStateChange: setState,
+      onNotice: setNotice,
+      onError: setError,
+    });
+    sessionRef.current = session;
+    setIsDemo(true);
   }, [leaveRoom]);
 
   const startGame = useCallback(() => {
@@ -114,8 +136,10 @@ export function GameRoomProvider({ children }: { children: ReactNode }) {
       notice,
       error,
       isConnecting,
+      isDemo,
       createRoom,
       joinRoom,
+      startDemo,
       startGame,
       submitChoice,
       submitStayExit,
@@ -128,8 +152,10 @@ export function GameRoomProvider({ children }: { children: ReactNode }) {
       notice,
       error,
       isConnecting,
+      isDemo,
       createRoom,
       joinRoom,
+      startDemo,
       startGame,
       submitChoice,
       submitStayExit,

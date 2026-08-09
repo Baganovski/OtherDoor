@@ -14,6 +14,7 @@ export type CardEffect =
   | { type: 'goldThenChanceDamage'; gold: number; minChance: number; maxChance: number; damage: number; rollKey: string }
   | { type: 'crowdGold'; crowdGold: number }
   | { type: 'parityGold'; odd: number; even: number }
+  | { type: 'parityGoldRange'; match: 'odd' | 'even'; min: number; max: number; rollKey: string }
   | { type: 'parityDamage'; odd: number; even: number }
   | { type: 'majorityGold'; amount: number }
   | { type: 'majorityGoldRange'; min: number; max: number; rollKey: string }
@@ -33,6 +34,8 @@ export interface CardDefinition {
   id: string;
   title: string;
   weight: CardWeight;
+  /** Minimum alive choosers required to deal this card. Default 2. */
+  minPlayers?: number;
   optionA: CardOption;
   optionB: CardOption;
 }
@@ -95,6 +98,8 @@ export function collectRollKeys(effect: CardEffect): Array<{ key: string; min: n
       return [{ key: effect.rollKey, min: effect.min, max: effect.max }];
     case 'minorityGoldRange':
       return [{ key: effect.rollKey, min: effect.min, max: effect.max }];
+    case 'parityGoldRange':
+      return [{ key: effect.rollKey, min: effect.min, max: effect.max }];
     case 'doubleOrNothing':
       return [{ key: effect.rollKey, min: 0, max: 1 }];
     case 'composite':
@@ -116,6 +121,23 @@ export function rollCardValues(card: CardDefinition): Record<string, number> {
   }
 
   return rolls;
+}
+
+/** Replace range text (e.g. 10–30% or 3–5) with the rolled outcome for display. */
+export function resolveOptionLabel(
+  label: string,
+  effect: CardEffect,
+  rolls: Record<string, number>,
+): string {
+  let resolved = label;
+  for (const { key, min, max } of collectRollKeys(effect)) {
+    if (min === max) continue;
+    const value = rolls[key];
+    if (value === undefined) continue;
+    const range = new RegExp(`${min}[–-]${max}(%?)`, 'g');
+    resolved = resolved.replace(range, `${value}$1`);
+  }
+  return resolved;
 }
 
 export function applyCardEffect(effect: CardEffect, context: EffectContext): EffectDelta {
@@ -195,6 +217,14 @@ export function applyCardEffect(effect: CardEffect, context: EffectContext): Eff
     case 'parityGold': {
       const isOdd = pickersOnSide % 2 === 1;
       return { health: 0, money: isOdd ? effect.odd : effect.even };
+    }
+
+    case 'parityGoldRange': {
+      const isOdd = pickersOnSide % 2 === 1;
+      const matches = effect.match === 'odd' ? isOdd : !isOdd;
+      if (!matches) return emptyDelta();
+      const amount = getRollValue(rolls, effect.rollKey, effect.min, effect.max);
+      return { health: 0, money: amount };
     }
 
     case 'parityDamage': {

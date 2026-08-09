@@ -4,12 +4,17 @@ import { RoomShell } from './components/RoomShell';
 import { TypewriterText, TYPE_SPEED, TYPE_START_DELAY } from './components/TypewriterText';
 import { MAX_PLAYERS, MIN_PLAYERS } from './types/game';
 
-type Screen = 'home' | 'create' | 'join';
+type Screen = 'home' | 'create' | 'join' | 'demo';
 
 const HOME_BRAND = 'the untitled selection game';
 const HOME_HEADLINE = 'Pick a side. Bank your gold.';
 const HOME_LEDE =
   'A phone-to-phone party game. Create a room, share the code, and lock in your choices.';
+
+const DEMO_PLAYER_COUNTS = Array.from(
+  { length: MAX_PLAYERS - MIN_PLAYERS + 1 },
+  (_, index) => MIN_PLAYERS + index,
+);
 
 export function App() {
   const {
@@ -17,8 +22,10 @@ export function App() {
     notice,
     error,
     isConnecting,
+    isDemo,
     createRoom,
     joinRoom,
+    startDemo,
     startGame,
     submitChoice,
     submitStayExit,
@@ -30,6 +37,7 @@ export function App() {
   const [screen, setScreen] = useState<Screen>('home');
   const [playerName, setPlayerName] = useState('');
   const [joinCode, setJoinCode] = useState('');
+  const [demoPlayerCount, setDemoPlayerCount] = useState(MIN_PLAYERS);
 
   if (state) {
     const connectedPlayers = state.players.filter((player) => player.connected);
@@ -49,6 +57,7 @@ export function App() {
         }
         onStart={startGame}
         onLeave={leaveRoom}
+        isDemo={isDemo}
         roster={state.players.map((player) => ({
           id: player.id,
           name: player.name,
@@ -94,6 +103,12 @@ export function App() {
     await joinRoom(joinCode, playerName);
   };
 
+  const handleDemo = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!playerName.trim()) return;
+    startDemo(playerName, demoPlayerCount);
+  };
+
   return (
     <div className="app-shell">
       <div className="home-backdrop" aria-hidden="true" />
@@ -127,6 +142,13 @@ export function App() {
               onClick={() => setScreen('join')}
             >
               Join game
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => setScreen('demo')}
+            >
+              Demo vs computer
             </button>
           </section>
         )}
@@ -185,6 +207,51 @@ export function App() {
                 </button>
                 <button type="submit" className="btn btn-primary" disabled={isConnecting}>
                   {isConnecting ? 'Connecting…' : 'Enter room'}
+                </button>
+              </div>
+            </form>
+          </section>
+        )}
+
+        {screen === 'demo' && (
+          <section className="panel home-panel">
+            <form className="home-form" onSubmit={handleDemo}>
+              <label htmlFor="demo-name">Your name</label>
+              <input
+                id="demo-name"
+                value={playerName}
+                onChange={(event) => setPlayerName(event.target.value)}
+                placeholder="What should they call you?"
+                autoComplete="nickname"
+                maxLength={20}
+                required
+              />
+              <fieldset className="player-count-fieldset">
+                <legend>Total players</legend>
+                <p className="player-count-hint">
+                  You plus computer opponents ({MIN_PLAYERS}–{MAX_PLAYERS}).
+                </p>
+                <div className="player-count-options" role="radiogroup" aria-label="Total players">
+                  {DEMO_PLAYER_COUNTS.map((count) => (
+                    <label key={count} className="player-count-option">
+                      <input
+                        type="radio"
+                        name="demo-player-count"
+                        value={count}
+                        checked={demoPlayerCount === count}
+                        onChange={() => setDemoPlayerCount(count)}
+                      />
+                      <span>{count}</span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+              <div className="form-actions">
+                <button type="button" className="btn btn-ghost" onClick={() => setScreen('home')}>
+                  Back
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Enter demo lobby
                 </button>
               </div>
             </form>

@@ -6,6 +6,8 @@ When an option uses a range (e.g. `1-3` or `10-30%`), the computer picks the val
 
 On cards where the outcome depends on the majority: if there is no majority (even split), nothing happens.
 
+Cards that need a true minority (or otherwise require 3+ choosers) are tagged `minPlayers: 3` in code and are not dealt when only 2 players remain.
+
 **Weight** controls how often a pair is offered: `common` > `uncommon` > `rare`. Healing should stay rare — prefer gold and damage for most pairs.
 
 Entries are **numbered** and **ordered by weight** (common → uncommon → rare). When adding a pair, insert it in the right section and renumber all entries.
@@ -62,7 +64,7 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 **Weight:** common
 
 - Receive 2 gold, then 40-60% chance to take 1 damage
-- Take 1 damage
+- Receive 1 gold
 
 ---
 
@@ -98,7 +100,7 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 **Weight:** common
 
 - Take 2 damage, receive 3 gold
-- Take 1 damage
+- 50% chance to recieve 1 damage
 
 ---
 
@@ -106,8 +108,8 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 
 **Weight:** common
 
-- Receive 2 gold if an odd number of players pick this
-- Receive 1 gold if an even number of players pick this
+- Receive 1-2 gold if an odd number of players pick this
+- Receive 1-2 gold if an even number of players pick this
 
 ---
 
@@ -133,6 +135,8 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 
 **Weight:** uncommon
 
+**Min players:** 3
+
 - If the minority picks this, receive 1 gold
 - If the minority picks this, receive 2-3 gold
 
@@ -152,7 +156,7 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 **Weight:** uncommon
 
 - Take 1 damage
-- Receive 2 gold if only you pick this or take 2 damage if more than one player picks this
+- Receive 2 gold alone or take 2 damage if shared
 
 ---
 
@@ -170,7 +174,7 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 **Weight:** uncommon
 
 - Receive 4 gold if only you pick this
-- Receive 1 gold
+- Receive 2 gold
 
 ---
 
@@ -179,13 +183,15 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 **Weight:** uncommon
 
 - If everyone picks this, receive 5 gold
-- Receive 1 gold
+- Receive 2 gold
 
 ---
 
 ## 19. Crowd or fringe
 
 **Weight:** uncommon
+
+**Min players:** 3
 
 - If the majority picks this, receive 2 gold
 - If the minority picks this, receive 3 gold
