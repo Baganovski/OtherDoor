@@ -32,6 +32,8 @@ export interface DealtCard {
   optionA: { label: string };
   optionB: { label: string };
   rolls: Record<string, number>;
+  /** When true, displayed A/B are swapped vs the card definition. */
+  sidesFlipped?: boolean;
 }
 
 export interface GameState {

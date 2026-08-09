@@ -8,7 +8,6 @@ export type CardEffect =
   | { type: 'receiveGoldRange'; min: number; max: number; rollKey: string }
   | { type: 'damageIfMultiple'; multipleDamage: number }
   | { type: 'majorityDamage'; amount: number }
-  | { type: 'majorityDamageRange'; min: number; max: number; rollKey: string }
   | { type: 'chanceDamage'; minChance: number; maxChance: number; damage: number; rollKey: string }
   | { type: 'soloGold'; minGold: number; maxGold: number; rollKey?: string }
   | { type: 'goldThenChanceDamage'; gold: number; minChance: number; maxChance: number; damage: number; rollKey: string }
@@ -62,13 +61,30 @@ export function mergeDelta(a: EffectDelta, b: EffectDelta): EffectDelta {
   return { health: a.health + b.health, money: a.money + b.money };
 }
 
-function rollInt(min: number, max: number): number {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+function rollInt(min: number, max: number, step = 1): number {
+  if (step <= 1) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  const start = Math.ceil(min / step) * step;
+  const end = Math.floor(max / step) * step;
+  if (start > end) {
+    return Math.round(((min + max) / 2) / step) * step;
+  }
+
+  const count = Math.floor((end - start) / step) + 1;
+  return start + Math.floor(Math.random() * count) * step;
 }
 
-function getRollValue(rolls: Record<string, number>, key: string, min: number, max: number): number {
+function getRollValue(
+  rolls: Record<string, number>,
+  key: string,
+  min: number,
+  max: number,
+  step = 1,
+): number {
   if (rolls[key] !== undefined) return rolls[key];
-  return rollInt(min, max);
+  return rollInt(min, max, step);
 }
 
 function isMajority(count: number, total: number): boolean {
@@ -80,22 +96,38 @@ function isMinority(count: number, total: number, otherCount: number): boolean {
   return count < otherCount;
 }
 
-export function collectRollKeys(effect: CardEffect): Array<{ key: string; min: number; max: number }> {
+const CHANCE_ROLL_STEP = 5;
+
+export function collectRollKeys(
+  effect: CardEffect,
+): Array<{ key: string; min: number; max: number; step?: number }> {
   switch (effect.type) {
     case 'healRange':
       return [{ key: effect.rollKey, min: effect.min, max: effect.max }];
     case 'receiveGoldRange':
       return [{ key: effect.rollKey, min: effect.min, max: effect.max }];
     case 'chanceDamage':
-      return [{ key: effect.rollKey, min: effect.minChance, max: effect.maxChance }];
+      return [
+        {
+          key: effect.rollKey,
+          min: effect.minChance,
+          max: effect.maxChance,
+          step: CHANCE_ROLL_STEP,
+        },
+      ];
     case 'soloGold':
       return effect.rollKey
         ? [{ key: effect.rollKey, min: effect.minGold, max: effect.maxGold }]
         : [];
     case 'goldThenChanceDamage':
-      return [{ key: effect.rollKey, min: effect.minChance, max: effect.maxChance }];
-    case 'majorityDamageRange':
-      return [{ key: effect.rollKey, min: effect.min, max: effect.max }];
+      return [
+        {
+          key: effect.rollKey,
+          min: effect.minChance,
+          max: effect.maxChance,
+          step: CHANCE_ROLL_STEP,
+        },
+      ];
     case 'majorityGoldRange':
       return [{ key: effect.rollKey, min: effect.min, max: effect.max }];
     case 'minorityGoldRange':
@@ -116,9 +148,9 @@ export function rollCardValues(card: CardDefinition): Record<string, number> {
   const keysA = collectRollKeys(card.optionA.effect);
   const keysB = collectRollKeys(card.optionB.effect);
 
-  for (const { key, min, max } of [...keysA, ...keysB]) {
+  for (const { key, min, max, step } of [...keysA, ...keysB]) {
     if (rolls[key] === undefined) {
-      rolls[key] = rollInt(min, max);
+      rolls[key] = rollInt(min, max, step ?? 1);
     }
   }
 
@@ -177,15 +209,14 @@ export function applyCardEffect(effect: CardEffect, context: EffectContext): Eff
       }
       return emptyDelta();
 
-    case 'majorityDamageRange':
-      if (isMajority(pickersOnSide, totalChoosers)) {
-        const amount = getRollValue(rolls, effect.rollKey, effect.min, effect.max);
-        return { health: -amount, money: 0 };
-      }
-      return emptyDelta();
-
     case 'chanceDamage': {
-      const chance = getRollValue(rolls, effect.rollKey, effect.minChance, effect.maxChance);
+      const chance = getRollValue(
+        rolls,
+        effect.rollKey,
+        effect.minChance,
+        effect.maxChance,
+        CHANCE_ROLL_STEP,
+      );
       if (Math.random() * 100 < chance) {
         return { health: -effect.damage, money: 0 };
       }
@@ -203,7 +234,13 @@ export function applyCardEffect(effect: CardEffect, context: EffectContext): Eff
 
     case 'goldThenChanceDamage': {
       const delta: EffectDelta = { health: 0, money: effect.gold };
-      const chance = getRollValue(rolls, effect.rollKey, effect.minChance, effect.maxChance);
+      const chance = getRollValue(
+        rolls,
+        effect.rollKey,
+        effect.minChance,
+        effect.maxChance,
+        CHANCE_ROLL_STEP,
+      );
       if (Math.random() * 100 < chance) {
         delta.health -= effect.damage;
       }

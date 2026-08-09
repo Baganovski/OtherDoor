@@ -831,8 +831,8 @@ span.typewriter {
 
 .app-version {
   position: fixed;
-  right: 0.65rem;
-  bottom: 0.35rem;
+  right: max(1.15rem, calc(env(safe-area-inset-right, 0px) + 0.85rem));
+  bottom: max(0.75rem, calc(env(safe-area-inset-bottom, 0px) + 0.5rem));
   z-index: 2;
   margin: 0;
   font-size: 0.65rem;

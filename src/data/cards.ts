@@ -88,19 +88,6 @@ export const CARD_DEFINITIONS: CardDefinition[] = [
     },
   },
   {
-    id: 'majority-curse',
-    title: 'Majority curse',
-    weight: 'common',
-    optionA: {
-      label: 'If the majority picks this, take 1–2 damage',
-      effect: { type: 'majorityDamageRange', min: 1, max: 2, rollKey: 'a.damage' },
-    },
-    optionB: {
-      label: 'If the majority picks this, take 3 damage',
-      effect: { type: 'majorityDamage', amount: 3 },
-    },
-  },
-  {
     id: 'blood-money',
     title: 'Blood money',
     weight: 'common',

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { JoinCodeBar } from './JoinCodeBar';
 import { LobbyRoster } from './LobbyRoster';
 import { GameHud } from './GameHud';
@@ -96,6 +96,8 @@ export function RoomShell({
 }: RoomShellProps) {
   const inGame = phase !== 'lobby' && phase !== 'finished';
   const [optionsReady, setOptionsReady] = useState(true);
+  const [interstitialStep, setInterstitialStep] = useState(0);
+  const [interstitialLines, setInterstitialLines] = useState<string[]>(['NEXT SELECTION']);
   const [actionSlotMinHeight, setActionSlotMinHeight] = useState(ACTION_SLOT_FALLBACK_MIN_PX);
   const prevPhaseRef = useRef(phase);
   const interstitialHoldTimerRef = useRef(0);
@@ -140,7 +142,10 @@ export function RoomShell({
 
   // Stable across the resolve beat so locked selection UI isn't cleared mid-hold.
   const choiceKey = `${currentCard?.id ?? 'stay-bank'}-${roundNumber}-${blockNumber}-${choiceIndexInBlock}`;
-  const interstitialKey = `${phase}-${choiceKey}`;
+  const interstitialKey = useMemo(
+    () => `${phase}-${choiceKey}-${interstitialStep}-${interstitialLines[interstitialStep] ?? ''}`,
+    [phase, choiceKey, interstitialStep, interstitialLines],
+  );
 
   useEffect(() => {
     const prevPhase = prevPhaseRef.current;
@@ -148,7 +153,9 @@ export function RoomShell({
 
     const enteringFromResolve =
       prevPhase === 'resolving' &&
-      (phase === 'choosing' || phase === 'stayOrBank');
+      (phase === 'choosing' || phase === 'stayOrBank' || phase === 'finished');
+
+    const enteringRunFromLobby = prevPhase === 'lobby' && phase === 'choosing';
 
     const isFirstChoiceOfRun =
       phase === 'choosing' &&
@@ -156,27 +163,51 @@ export function RoomShell({
       blockNumber === 1 &&
       choiceIndexInBlock === 1;
 
-    if (enteringFromResolve && !isFirstChoiceOfRun) {
+    const isNewRoundStart =
+      phase === 'choosing' &&
+      blockNumber === 1 &&
+      choiceIndexInBlock === 1 &&
+      !isFirstChoiceOfRun;
+
+    if (enteringRunFromLobby && isFirstChoiceOfRun) {
       window.clearTimeout(interstitialHoldTimerRef.current);
+      setInterstitialLines([`ROUND ${roundNumber}`]);
+      setInterstitialStep(0);
       setOptionsReady(false);
-    } else if (isFirstChoiceOfRun) {
-      setOptionsReady(true);
+    } else if (enteringFromResolve) {
+      window.clearTimeout(interstitialHoldTimerRef.current);
+      if (phase === 'finished') {
+        setInterstitialLines(['ROUND END']);
+      } else if (isNewRoundStart) {
+        setInterstitialLines(['ROUND END', `ROUND ${roundNumber}`]);
+      } else {
+        setInterstitialLines(['NEXT SELECTION']);
+      }
+      setInterstitialStep(0);
+      setOptionsReady(false);
     }
   }, [phase, roundNumber, blockNumber, choiceIndexInBlock]);
 
   const handleInterstitialComplete = useCallback(() => {
     window.clearTimeout(interstitialHoldTimerRef.current);
     interstitialHoldTimerRef.current = window.setTimeout(() => {
-      setOptionsReady(true);
+      setInterstitialStep((step) => {
+        const next = step + 1;
+        if (next < interstitialLines.length) {
+          return next;
+        }
+        setOptionsReady(true);
+        return step;
+      });
     }, NEXT_SELECTION_HOLD_MS);
-  }, []);
+  }, [interstitialLines.length]);
 
   useEffect(() => {
     return () => window.clearTimeout(interstitialHoldTimerRef.current);
   }, []);
 
   // Keep locked choices on screen through the resolve beat so the HUD doesn't
-  // jump up when options disappear, then jump down again for "NEXT SELECTION".
+  // jump up when options disappear, then jump down again for the interstitial.
   const showChoosing =
     Boolean(currentCard) &&
     ((phase === 'choosing' && localCanAct && optionsReady) || phase === 'resolving');
@@ -184,11 +215,12 @@ export function RoomShell({
     !currentCard &&
     ((phase === 'stayOrBank' && localCanAct && optionsReady) || phase === 'resolving');
   const showInterstitial =
-    localCanAct &&
     !optionsReady &&
-    (phase === 'choosing' || phase === 'stayOrBank');
+    (phase === 'choosing' || phase === 'stayOrBank' || phase === 'finished') &&
+    (phase === 'finished' || localCanAct);
   const showActionSlot =
     phase === 'choosing' || phase === 'resolving' || phase === 'stayOrBank';
+  const interstitialText = interstitialLines[interstitialStep] ?? 'NEXT SELECTION';
 
   useLayoutEffect(() => {
     if (!showChoosing && !showStayBank) return;
@@ -201,10 +233,10 @@ export function RoomShell({
   }, [showChoosing, showStayBank, choiceKey, currentCard]);
 
   useEffect(() => {
-    if (phase === 'lobby' || phase === 'finished') {
+    if (phase === 'lobby' || (phase === 'finished' && optionsReady)) {
       setActionSlotMinHeight(ACTION_SLOT_FALLBACK_MIN_PX);
     }
-  }, [phase]);
+  }, [phase, optionsReady]);
 
   return (
     <div className="room-shell">
@@ -232,8 +264,22 @@ export function RoomShell({
           </section>
         ) : phase === 'finished' ? (
           <section className="panel game-panel">
-            <PanelHeader eyebrow={eyebrow} title={title} copy={copy} />
-            <ResultsPanel players={players} />
+            {showInterstitial ? (
+              <div className="next-selection-banner" aria-live="polite">
+                <TypewriterText
+                  text={interstitialText}
+                  as="p"
+                  className="next-selection-text"
+                  replayKey={interstitialKey}
+                  onComplete={handleInterstitialComplete}
+                />
+              </div>
+            ) : (
+              <>
+                <PanelHeader eyebrow={eyebrow} title={title} copy={copy} />
+                <ResultsPanel players={players} />
+              </>
+            )}
           </section>
         ) : (
           <section className="panel game-panel">
@@ -248,7 +294,7 @@ export function RoomShell({
                 {showInterstitial && (
                   <div className="next-selection-banner" aria-live="polite">
                     <TypewriterText
-                      text="NEXT SELECTION"
+                      text={interstitialText}
                       as="p"
                       className="next-selection-text"
                       replayKey={interstitialKey}

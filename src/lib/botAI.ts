@@ -1,7 +1,7 @@
 import type { DecisionSide, DealtCard, Player, StayBankChoice } from '../types/game';
 import { BOT_EXIT_HEALTH_THRESHOLD, STARTING_HEALTH } from '../types/game';
 import type { CardEffect } from './cardEffects';
-import { getCardById } from './cardEngine';
+import { getCardById, definitionSideForChoice } from './cardEngine';
 
 /** Small noise so identical bots don't always pick the same side. */
 const SCORE_NOISE = 0.6;
@@ -49,11 +49,6 @@ function estimateEffect(
       return { health: -effect.multipleDamage * 0.45, money: 0 };
     case 'majorityDamage':
       return { health: -effect.amount * 0.5, money: 0 };
-    case 'majorityDamageRange':
-      return {
-        health: -rollOrMid(rolls, effect.rollKey, effect.min, effect.max) * 0.5,
-        money: 0,
-      };
     case 'chanceDamage': {
       const chance = rollOrMid(rolls, effect.rollKey, effect.minChance, effect.maxChance);
       return { health: -effect.damage * (chance / 100), money: 0 };
@@ -144,10 +139,13 @@ export function pickBotChoice(player: Player, card: DealtCard | null): DecisionS
     return Math.random() < 0.5 ? 'a' : 'b';
   }
 
-  const scoreA =
-    scoreOption(cardDef.optionA.effect, player, card.rolls) + Math.random() * SCORE_NOISE;
-  const scoreB =
-    scoreOption(cardDef.optionB.effect, player, card.rolls) + Math.random() * SCORE_NOISE;
+  const defSideA = definitionSideForChoice(card, 'a');
+  const defSideB = definitionSideForChoice(card, 'b');
+  const effectA = defSideA === 'a' ? cardDef.optionA.effect : cardDef.optionB.effect;
+  const effectB = defSideB === 'a' ? cardDef.optionA.effect : cardDef.optionB.effect;
+
+  const scoreA = scoreOption(effectA, player, card.rolls) + Math.random() * SCORE_NOISE;
+  const scoreB = scoreOption(effectB, player, card.rolls) + Math.random() * SCORE_NOISE;
   return scoreA >= scoreB ? 'a' : 'b';
 }
 

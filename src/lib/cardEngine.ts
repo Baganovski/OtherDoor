@@ -31,18 +31,31 @@ export function dealCard(chooserCount: number): DealtCard {
   }
 
   const rolls = rollCardValues(selected);
+  const labelA = {
+    label: resolveOptionLabel(selected.optionA.label, selected.optionA.effect, rolls),
+  };
+  const labelB = {
+    label: resolveOptionLabel(selected.optionB.label, selected.optionB.effect, rolls),
+  };
+  const sidesFlipped = Math.random() < 0.5;
 
   return {
     id: selected.id,
     title: selected.title,
-    optionA: {
-      label: resolveOptionLabel(selected.optionA.label, selected.optionA.effect, rolls),
-    },
-    optionB: {
-      label: resolveOptionLabel(selected.optionB.label, selected.optionB.effect, rolls),
-    },
+    optionA: sidesFlipped ? labelB : labelA,
+    optionB: sidesFlipped ? labelA : labelB,
     rolls,
+    sidesFlipped,
   };
+}
+
+/** Map a player's A/B pick to the card definition side (accounts for display flip). */
+export function definitionSideForChoice(
+  card: DealtCard,
+  side: DecisionSide,
+): DecisionSide {
+  if (!card.sidesFlipped) return side;
+  return side === 'a' ? 'b' : 'a';
 }
 
 export function resolveCardRound(
@@ -68,7 +81,9 @@ export function resolveCardRound(
       return { ...player, hasSubmitted: false };
     }
 
-    const effect = side === 'a' ? cardDef.optionA.effect : cardDef.optionB.effect;
+    const defSide = definitionSideForChoice(card, side);
+    const effect = defSide === 'a' ? cardDef.optionA.effect : cardDef.optionB.effect;
+    // Counts use display sides (what players actually picked as A/B).
     const pickersOnSide = side === 'a' ? pickersA.length : pickersB.length;
     const pickersOnOtherSide = side === 'a' ? pickersB.length : pickersA.length;
 

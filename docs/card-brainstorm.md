@@ -92,25 +92,16 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 
 ---
 
-## 8. Majority curse
-
-**Weight:** common
-
-- If the majority picks this, take 1-2 damage
-- If the majority picks this, take 3 damage
-
----
-
-## 9. Blood money
+## 8. Blood money
 
 **Weight:** common
 
 - Take 2 damage, receive 3 gold
-- 50% chance to recieve 1 damage
+- 50% chance to receive 1 damage
 
 ---
 
-## 10. Parity gold
+## 9. Parity gold
 
 **Weight:** common
 
@@ -119,7 +110,7 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 
 ---
 
-## 11. Parity pain
+## 10. Parity pain
 
 **Weight:** common
 
@@ -128,7 +119,7 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 
 ---
 
-## 12. Blood toll
+## 11. Blood toll
 
 **Weight:** common
 
@@ -139,7 +130,7 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 
 ---
 
-## 13. Spike or grind
+## 12. Spike or grind
 
 **Weight:** common
 
@@ -150,7 +141,7 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 
 ---
 
-## 14. Majority gold
+## 13. Majority gold
 
 **Weight:** uncommon
 
@@ -159,7 +150,7 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 
 ---
 
-## 15. Minority reward
+## 14. Minority reward
 
 **Weight:** uncommon
 
@@ -170,25 +161,25 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 
 ---
 
-## 16. Everyone wins
+## 15. Safe cut
 
 **Weight:** uncommon
 
-- If everyone picks this, receive 2 gold
-- If everyone picks this, receive 4 gold
+- Receive 2 gold
+- Take 1 damage, receive 4 gold
 
 ---
 
-## 17. Betrayal bait
+## 16. Betrayal bait
 
 **Weight:** uncommon
 
 - Take 1 damage
-- Receive 2 gold alone or take 2 damage if shared
+- Receive 2 gold if only you pick this or take 2 damage if more than one player picks this
 
 ---
 
-## 18. Double or nothing
+## 17. Double or nothing
 
 **Weight:** uncommon
 
@@ -197,36 +188,25 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 
 ---
 
-## 19. Lonely purse
+## 18. Pain purse
 
 **Weight:** uncommon
 
-- Receive 4 gold if only you pick this
-- Receive 2 gold
+- Take 1 damage, receive 3 gold
+- Receive 1 gold
 
 ---
 
-## 20. All-in gold
+## 19. Side bet
 
 **Weight:** uncommon
 
-- If everyone picks this, receive 5 gold
-- Receive 2 gold
+- Receive 1 gold
+- 20-40% chance to receive 3 gold
 
 ---
 
-## 21. Crowd or fringe
-
-**Weight:** uncommon
-
-**Min players:** 3
-
-- If the majority picks this, receive 2 gold
-- If the minority picks this, receive 3 gold
-
----
-
-## 22. Greedy cut
+## 20. Greedy cut
 
 **Weight:** uncommon
 
@@ -237,7 +217,7 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 
 ---
 
-## 23. All in alone
+## 21. All in alone
 
 **Weight:** uncommon
 
@@ -248,7 +228,7 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 
 ---
 
-## 24. Heal or Gold
+## 22. Heal or Gold
 
 **Weight:** rare
 
