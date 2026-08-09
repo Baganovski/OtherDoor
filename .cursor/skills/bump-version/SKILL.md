@@ -5,9 +5,10 @@ description: Bump the TheUntitledSelectionGame app version in package.json. Use 
 
 # Bump app version
 
-The version lives in `package.json` (`"version"` field). It is **not** displayed
-in the app UI today — bump only when the user asks (e.g. before tagging a release
-or once version is shown in the UI).
+The version lives in `package.json` (`"version"` field). Vite injects it as
+`__APP_VERSION__` (see `vite.config.ts`), and the UI shows it as `v{version}` via
+`src/components/AppVersion.tsx`. Bump only when the user asks.
+
 
 ## Version format
 
@@ -34,11 +35,14 @@ If the user names an explicit version (e.g. "bump to 0.2.0", "make it 1.0.0"), u
    ```
    rg -n '"version"' --glob 'package.json' --glob '*.md' --glob '*.html' --glob 'src/**'
    ```
-   As of now this should only match `package.json` — if the app later reads or
-   displays version (e.g. via `import.meta.env`), update those places too.
+   The source of truth is `package.json`. The footer reads `__APP_VERSION__` from
+   the Vite build, so editing `package.json` is usually enough — no hard-coded
+   copy in `src/` to update unless someone added one.
 4. **Edit** `package.json` to the new version.
 5. **Report** the old → new version and the list of files changed. Remind the user
    to stage and commit separately (or ask to commit) — this skill does not commit.
+   After a rebuild/refresh, the bottom-right footer should show `v{new}`.
+
 
 ## Do not
 

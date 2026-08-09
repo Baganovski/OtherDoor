@@ -118,9 +118,9 @@ no local build step after commit — CI handles deploy.
 ## Do not
 
 - ❌ Don't `git add` unstaged or untracked files unless the user asks.
-- ❌ Don't bump `package.json` version unless the user asks — version is not
-  shown in the app today; use the [`bump-version`](../bump-version/SKILL.md)
-  skill only when explicitly requested.
+- ❌ Don't bump `package.json` version unless the user asks. Version is shown in
+  the app footer (`v{version}` from `package.json` via Vite); use the
+  [`bump-version`](../bump-version/SKILL.md) skill only when explicitly requested.
 - ❌ Don't force-push, or push if the commit step failed.
 - ❌ Don't amend an existing commit; create a new one unless the user asks to amend.
 - ❌ Don't pass `--no-verify` or otherwise skip hooks. If a hook fails, fix the

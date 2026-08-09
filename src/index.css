@@ -781,6 +781,19 @@ span.typewriter {
   pointer-events: none;
 }
 
+.app-version {
+  position: fixed;
+  right: 0.65rem;
+  bottom: 0.35rem;
+  z-index: 2;
+  margin: 0;
+  font-size: 0.65rem;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  opacity: 0.72;
+  pointer-events: none;
+}
+
 .results-panel {
   border: 1px solid rgba(42, 34, 26, 0.35);
   padding: 0 0.85rem;
