@@ -1,4 +1,5 @@
 import { useSteppingValue } from '../hooks/useSteppingValue';
+import { useStatFlash } from '../hooks/useStatFlash';
 
 interface PlayerHudStatsProps {
   health: number;
@@ -7,6 +8,12 @@ interface PlayerHudStatsProps {
   showHpGold: boolean;
   showBanked: boolean;
   showLost: boolean;
+}
+
+function flashClass(flash: 'up' | 'down' | null): string {
+  if (flash === 'up') return ' stat-value-up';
+  if (flash === 'down') return ' stat-value-down';
+  return '';
 }
 
 export function PlayerHudStats({
@@ -25,24 +32,28 @@ export function PlayerHudStats({
     start: showBanked && healthSettled && moneySettled,
   });
 
+  const healthFlash = useStatFlash(health);
+  const moneyFlash = useStatFlash(money);
+  const bankedFlash = useStatFlash(bankedGold);
+
   return (
     <>
       {showHpGold && (
         <>
           <span className="stat">
             <span className="stat-label">HP</span>
-            <span className="stat-value">{displayedHealth}</span>
+            <span className={`stat-value${flashClass(healthFlash)}`}>{displayedHealth}</span>
           </span>
           <span className="stat">
             <span className="stat-label">Gold</span>
-            <span className="stat-value">{displayedMoney}</span>
+            <span className={`stat-value${flashClass(moneyFlash)}`}>{displayedMoney}</span>
           </span>
         </>
       )}
       {showBanked && (
         <span className="stat">
           <span className="stat-label">Banked</span>
-          <span className="stat-value">{displayedBanked}</span>
+          <span className={`stat-value${flashClass(bankedFlash)}`}>{displayedBanked}</span>
         </span>
       )}
       {showLost && (

@@ -1,18 +1,36 @@
 ---
 name: commit
-description: Commit the currently staged changes with a clear message, then push to the remote. Use whenever asked to commit staged changes, "commit what's staged", or "make a commit". Only commits what is already staged — it does not stage other new files unless the user asks. Push to master triggers GitHub Pages deploy via CI.
+description: Bump the app version, then commit the currently staged changes with a clear message, then push to the remote. Use whenever asked to commit staged changes, "commit what's staged", or "make a commit". Only commits what is already staged (plus the version bump) — it does not stage other new files unless the user asks. Push to master triggers GitHub Pages deploy via CI.
 ---
 
-# Commit staged changes, then push
+# Commit staged changes (with a version bump), then push
 
-Create a single commit from the changes that are **already staged**, then push the
-branch to its remote. Do not stage other files unless the user explicitly asks —
-the point of this skill is to commit the user's chosen staged set, not everything
-in the working tree.
+Bump the app version and then create a single commit from the changes that are
+**already staged**, then push the branch to its remote. Do not stage other files
+unless the user explicitly asks — the point of this skill is to commit the
+user's chosen staged set (plus the version bump this skill makes), not
+everything in the working tree.
 
 This is a Vite + React web app deployed to **GitHub Pages** (`.github/workflows/deploy.yml`).
 A push to **`master`** runs `npm ci`, `npm run build`, and publishes `dist`. There is
 no local build step after commit — CI handles deploy.
+
+## ⚠️ Never run this proactively
+
+The user commits manually and does **not** want the agent creating commits (or
+pushing) on its own initiative. Only run this skill when the user's **current**
+message explicitly asks for a commit/push (e.g. "commit this", "commit what's
+staged", "push this up", `/commit`). Never chain into it automatically:
+
+- Finishing a feature, fix, or edit is **not** a reason to commit — stop and
+  hand control back to the user instead.
+- Other skills (`bump-version`, etc.) finishing is **not** a reason to commit,
+  even if changes happen to be staged.
+- A prior turn in the same conversation asking to commit does **not** carry
+  forward — a new commit needs a new, explicit ask.
+
+If you're unsure whether the user is asking for a commit right now, ask them
+rather than assuming.
 
 ## Steps
 
@@ -28,24 +46,44 @@ no local build step after commit — CI handles deploy.
    - Note any unstaged changes so you can mention them in the report (they will
      be left out of the commit).
 
-2. **Review recent history** for message style so the new commit matches:
+2. **Bump the version.** Run the [`bump-version`](../bump-version/SKILL.md) skill
+   to increment the version in `package.json` (default `+0.0.1` unless the user
+   asked for a specific version). Then **stage the files that bump changed** so
+   they land in this commit:
+
+   ```
+   git add package.json
+   ```
+
+   (Stage exactly the files `bump-version` reported as changed — no others.) This
+   is the one intentional exception to the "only commit what's staged" rule: the
+   version bump belongs with the commit it ships.
+
+3. **Review recent history** for message style so the new commit matches:
 
    ```
    git log --oneline -10
-   git log -3 --format="%s%n%b---"
    ```
 
    Read a few recent messages to keep the voice consistent, then use the
    template below.
 
-3. **Write the message.** Match this repo's existing style:
+4. **Write the message.** Use this template:
 
-   - **Subject:** one short imperative sentence describing the main change
-     (e.g. `Add card engine with stay/exit and results flow.`). A trailing
-     period is fine — recent commits use one.
-   - **Body (optional):** one or two sentences with extra context if the subject
-     alone isn't enough. No bullet lists unless the change is genuinely a list
-     of unrelated items.
+   - **Subject:** `v<version> - <short imperative summary>` where `<version>` is
+     the new version from the bump (e.g. `v0.0.2`). Use a plain ASCII hyphen
+     (`-`, U+002D) between the version and summary — **not** an en-dash (`–`);
+     Windows shells often mangle Unicode dashes into `?` in commit subjects.
+     Keep the summary concise (imperative mood, no trailing period), describing
+     the theme of the change.
+   - **Body:** a bullet list of what changed. Lead with the version-bump bullet,
+     then one bullet per meaningful change:
+
+     ```
+     - Bump version to <version>
+     - <change 1>
+     - <change 2>
+     ```
 
    End the message with the required trailer:
 
@@ -53,10 +91,7 @@ no local build step after commit — CI handles deploy.
    Co-authored-by: Cursor <cursoragent@cursor.com>
    ```
 
-   Do **not** prefix the subject with a version (`v0.0.x – …`) unless the user
-   explicitly asks for a versioned release commit.
-
-4. **Commit.** Write the message to a **UTF-8 (no BOM) file**, then pass it
+5. **Commit.** Write the message to a **UTF-8 (no BOM) file**, then pass it
    with `git commit -F`.
 
    **Do not** pipe a PowerShell here-string into `git commit -F -` or rely on
@@ -68,9 +103,11 @@ no local build step after commit — CI handles deploy.
    ```
    $commitMsgPath = Join-Path $env:TEMP "the-untitled-selection-game-commit-msg.txt"
    $commitMsg = @"
-   <subject line>
+   v<version> - <short imperative summary>
 
-   <optional body paragraph>
+   - Bump version to <version>
+   - <change 1>
+   - <change 2>
 
    Co-authored-by: Cursor <cursoragent@cursor.com>
    "@
@@ -84,21 +121,23 @@ no local build step after commit — CI handles deploy.
 
    ```
    git commit -m "$(cat <<'EOF'
-   <subject line>
+   v<version> - <short imperative summary>
 
-   <optional body paragraph>
+   - Bump version to <version>
+   - <change 1>
+   - <change 2>
 
    Co-authored-by: Cursor <cursoragent@cursor.com>
    EOF
    )"
    ```
 
-5. **Confirm the commit.** Run `git status` and note the new commit's hash and
-   subject. If a pre-commit hook modified files or the commit failed, surface
-   that plainly and do not retry blindly — and do not push a failed/incomplete
-   commit.
+6. **Confirm the commit.** Run `git status` and note the new commit's hash,
+   subject, and the old → new version. If a pre-commit hook modified files or
+   the commit failed, surface that plainly and do not retry blindly — and do
+   not push a failed/incomplete commit.
 
-6. **Push.** Sync the commit to its remote:
+7. **Push.** Sync the commit to its remote:
 
    ```
    git push
@@ -111,16 +150,15 @@ no local build step after commit — CI handles deploy.
    If the push was to **`master`**, note that GitHub Actions will build and
    deploy to GitHub Pages automatically (no local `npm run build` needed).
 
-7. **Report.** Give the commit hash, subject, confirm the push succeeded (or
-   explain why it didn't), and mention any unstaged changes still in the working
-   tree. If pushed to `master`, mention that Pages deploy is running in CI.
+8. **Report.** Give the commit hash, subject, old → new version, confirm the
+   push succeeded (or explain why it didn't), and mention any unstaged changes
+   still in the working tree. If pushed to `master`, mention that Pages deploy
+   is running in CI.
 
 ## Do not
 
-- ❌ Don't `git add` unstaged or untracked files unless the user asks.
-- ❌ Don't bump `package.json` version unless the user asks. Version is shown in
-  the app footer (`v{version}` from `package.json` via Vite); use the
-  [`bump-version`](../bump-version/SKILL.md) skill only when explicitly requested.
+- ❌ Don't `git add` unstaged or untracked files unless the user asks — commit
+  only what is already staged, plus the version-bump files from step 2.
 - ❌ Don't force-push, or push if the commit step failed.
 - ❌ Don't amend an existing commit; create a new one unless the user asks to amend.
 - ❌ Don't pass `--no-verify` or otherwise skip hooks. If a hook fails, fix the

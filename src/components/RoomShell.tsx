@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { JoinCodeBar } from './JoinCodeBar';
 import { LobbyRoster } from './LobbyRoster';
 import { GameHud } from './GameHud';
@@ -11,6 +11,7 @@ import type { DealtCard, DecisionSide, GamePhase, StayBankChoice } from '../type
 import { CHOICES_PER_BLOCK, MAX_PLAYERS, MIN_PLAYERS, ROUNDS_PER_RUN } from '../types/game';
 
 const NEXT_SELECTION_HOLD_MS = 3000;
+const ACTION_SLOT_FALLBACK_MIN_PX = 232;
 
 interface RoomShellProps {
   roomCode: string;
@@ -95,8 +96,10 @@ export function RoomShell({
 }: RoomShellProps) {
   const inGame = phase !== 'lobby' && phase !== 'finished';
   const [optionsReady, setOptionsReady] = useState(true);
+  const [actionSlotMinHeight, setActionSlotMinHeight] = useState(ACTION_SLOT_FALLBACK_MIN_PX);
   const prevPhaseRef = useRef(phase);
   const interstitialHoldTimerRef = useRef(0);
+  const actionSlotRef = useRef<HTMLDivElement>(null);
 
   const eyebrow =
     phase === 'lobby'
@@ -135,7 +138,9 @@ export function RoomShell({
             ? 'Bank to sit out this round. Stay and risk pocket gold for four more choices. Survivors heal between rounds.'
             : 'Lock your decision. The choice resolves when everyone still in has decided.';
 
-  const roundKey = `${phase}-${currentCard?.id ?? 'none'}-${roundNumber}-${blockNumber}-${choiceIndexInBlock}`;
+  // Stable across the resolve beat so locked selection UI isn't cleared mid-hold.
+  const choiceKey = `${currentCard?.id ?? 'stay-bank'}-${roundNumber}-${blockNumber}-${choiceIndexInBlock}`;
+  const interstitialKey = `${phase}-${choiceKey}`;
 
   useEffect(() => {
     const prevPhase = prevPhaseRef.current;
@@ -170,10 +175,36 @@ export function RoomShell({
     return () => window.clearTimeout(interstitialHoldTimerRef.current);
   }, []);
 
-  const showChoosing = phase === 'choosing' && currentCard && localCanAct;
-  const showStayBank = phase === 'stayOrBank' && localCanAct;
-  const showChoiceArea = showChoosing || showStayBank;
-  const showInterstitial = showChoiceArea && !optionsReady;
+  // Keep locked choices on screen through the resolve beat so the HUD doesn't
+  // jump up when options disappear, then jump down again for "NEXT SELECTION".
+  const showChoosing =
+    Boolean(currentCard) &&
+    ((phase === 'choosing' && localCanAct && optionsReady) || phase === 'resolving');
+  const showStayBank =
+    !currentCard &&
+    ((phase === 'stayOrBank' && localCanAct && optionsReady) || phase === 'resolving');
+  const showInterstitial =
+    localCanAct &&
+    !optionsReady &&
+    (phase === 'choosing' || phase === 'stayOrBank');
+  const showActionSlot =
+    phase === 'choosing' || phase === 'resolving' || phase === 'stayOrBank';
+
+  useLayoutEffect(() => {
+    if (!showChoosing && !showStayBank) return;
+    const el = actionSlotRef.current;
+    if (!el) return;
+    const nextHeight = Math.ceil(el.getBoundingClientRect().height);
+    if (nextHeight > 0) {
+      setActionSlotMinHeight((prev) => Math.max(prev, nextHeight));
+    }
+  }, [showChoosing, showStayBank, choiceKey, currentCard]);
+
+  useEffect(() => {
+    if (phase === 'lobby' || phase === 'finished') {
+      setActionSlotMinHeight(ACTION_SLOT_FALLBACK_MIN_PX);
+    }
+  }, [phase]);
 
   return (
     <div className="room-shell">
@@ -208,35 +239,43 @@ export function RoomShell({
           <section className="panel game-panel">
             <PanelHeader eyebrow={eyebrow} title={title} copy={copy} />
 
-            {showInterstitial && (
-              <div className="next-selection-banner" aria-live="polite">
-                <TypewriterText
-                  text="NEXT SELECTION"
-                  as="p"
-                  className="next-selection-text"
-                  replayKey={roundKey}
-                  onComplete={handleInterstitialComplete}
-                />
+            {showActionSlot && (
+              <div
+                ref={actionSlotRef}
+                className={`game-action-slot${showInterstitial ? ' game-action-slot-interstitial' : ''}`}
+                style={{ minHeight: actionSlotMinHeight }}
+              >
+                {showInterstitial && (
+                  <div className="next-selection-banner" aria-live="polite">
+                    <TypewriterText
+                      text="NEXT SELECTION"
+                      as="p"
+                      className="next-selection-text"
+                      replayKey={interstitialKey}
+                      onComplete={handleInterstitialComplete}
+                    />
+                  </div>
+                )}
+
+                {showChoosing && currentCard && (
+                  <ChoicePanel
+                    card={currentCard}
+                    disabled={localHasSubmitted || phase === 'resolving' || !localCanAct}
+                    onSubmit={onSubmitChoice}
+                    roundKey={choiceKey}
+                    isDemo={isDemo}
+                  />
+                )}
+
+                {showStayBank && (
+                  <StayExitPanel
+                    disabled={localHasSubmitted || phase === 'resolving' || !localCanAct}
+                    onSubmit={onSubmitStayBank}
+                    roundKey={choiceKey}
+                    isDemo={isDemo}
+                  />
+                )}
               </div>
-            )}
-
-            {showChoosing && optionsReady && (
-              <ChoicePanel
-                card={currentCard}
-                disabled={localHasSubmitted}
-                onSubmit={onSubmitChoice}
-                roundKey={roundKey}
-                isDemo={isDemo}
-              />
-            )}
-
-            {showStayBank && optionsReady && (
-              <StayExitPanel
-                disabled={localHasSubmitted}
-                onSubmit={onSubmitStayBank}
-                roundKey={roundKey}
-                isDemo={isDemo}
-              />
             )}
 
             <GameHud players={players} isDemo={isDemo} />

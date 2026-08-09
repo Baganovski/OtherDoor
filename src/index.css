@@ -14,6 +14,8 @@
   --line: #2a221a;
   --danger: #3a1c14;
   --success: #1c1612;
+  --stat-gain: #2f6b3a;
+  --stat-loss: #a33a2c;
   --paper-shadow: 0 1px 0 rgba(255, 250, 240, 0.65) inset, 0 2px 4px rgba(40, 28, 16, 0.08),
     0 14px 32px rgba(40, 28, 16, 0.14);
   --font-display: 'Special Elite', 'Courier New', Courier, monospace;
@@ -522,6 +524,18 @@ button {
 .stat-value {
   font-family: var(--font-display);
   font-size: 1.1rem;
+  color: var(--ink);
+  transition: color 0.7s ease;
+}
+
+.stat-value-up {
+  color: var(--stat-gain);
+  transition: none;
+}
+
+.stat-value-down {
+  color: var(--stat-loss);
+  transition: none;
 }
 
 .decision-pill {
@@ -584,12 +598,25 @@ button {
   font-weight: 600;
 }
 
+/* Holds choice / interstitial space so the player HUD doesn't jump up/down. */
+.game-action-slot {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.game-action-slot-interstitial {
+  justify-content: center;
+}
+
 .next-selection-banner {
   display: flex;
+  flex: 1;
   align-items: center;
   justify-content: center;
-  min-height: 5rem;
+  min-height: 100%;
   padding: 1.5rem 1rem;
+  box-sizing: border-box;
 }
 
 .next-selection-text {
@@ -620,7 +647,7 @@ button {
 .choice-disclaimer {
   font-size: 0.8rem;
   min-height: 0;
-  opacity: 0.9;
+  color: var(--stat-loss);
 }
 
 .choice-grid {
