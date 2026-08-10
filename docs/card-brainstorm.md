@@ -10,9 +10,17 @@ When an option uses a range (e.g. `1-3` or `10-30%`), the computer picks the val
 
 On cards where the outcome depends on the majority: if there is no majority (even split), nothing happens.
 
-Cards that need a true minority (or otherwise require 3+ choosers) are tagged `minPlayers: 3` in code and are not dealt when only 2 players remain.
+## Deal pools
 
-Cards for the last remaining player are tagged `minPlayers: 1` and `maxPlayers: 1` (`**Max players:** 1` in this doc) and are only dealt when exactly one alive chooser remains. Those pairs are harder so the round ends faster.
+Cards belong to one of these named pools:
+
+| Pool | When it deals | How it’s tagged |
+|---|---|---|
+| **Solo pool** | Exactly **1** alive chooser | `minPlayers: 1`, `maxPlayers: 1` (`**Max players:** 1`) |
+| **Duel pool** | Exclusive set at exactly **2** choosers; also deals at **3+** | `twoPlayerPool: true` (`**Duel pool:**`) |
+| **Trio pool** | **3+** choosers (all other multiplayer cards) | No special flag, or `minPlayers: 3` (`**Min players:** 3`) when a true minority is required |
+
+Prefer percentage / personal-risk pairs for the **Duel pool**.
 
 **Weight** controls how often a pair is offered: `common` > `uncommon` > `rare`. Healing should stay rare — prefer gold and damage for most pairs.
 
@@ -51,6 +59,8 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 
 **Weight:** common
 
+**Duel pool:**
+
 - 10-30% chance to take 3 damage
 - 70-90% chance to take 1 damage
 
@@ -68,6 +78,8 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 ## 5. Risk gold
 
 **Weight:** common
+
+**Duel pool:**
 
 - Receive 2 gold, then 40-60% chance to take 1 damage
 - Receive 1 gold
@@ -87,6 +99,8 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 
 **Weight:** common
 
+**Duel pool:**
+
 - 5-20% chance to take 4 damage
 - 80-95% chance to take 1 damage
 
@@ -96,12 +110,36 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 
 **Weight:** common
 
+**Duel pool:**
+
 - Take 2 damage, receive 3 gold
 - 50% chance to receive 1 damage
 
 ---
 
-## 9. Parity gold
+## 9. Loaded dice
+
+**Weight:** common
+
+**Duel pool:**
+
+- 15-30% chance to receive 4 gold
+- 60-80% chance to receive 2 gold
+
+---
+
+## 10. Bleed bet
+
+**Weight:** common
+
+**Duel pool:**
+
+- Receive 1 gold, then 25-40% chance to take 2 damage
+- 50-70% chance to receive 2 gold
+
+---
+
+## 11. Parity gold
 
 **Weight:** common
 
@@ -110,7 +148,7 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 
 ---
 
-## 10. Parity pain
+## 12. Parity pain
 
 **Weight:** common
 
@@ -119,7 +157,7 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 
 ---
 
-## 11. Blood toll
+## 13. Blood toll
 
 **Weight:** common
 
@@ -130,7 +168,7 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 
 ---
 
-## 12. Spike or grind
+## 14. Spike or grind
 
 **Weight:** common
 
@@ -141,7 +179,7 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 
 ---
 
-## 13. Majority gold
+## 15. Majority gold
 
 **Weight:** uncommon
 
@@ -150,7 +188,7 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 
 ---
 
-## 14. Minority reward
+## 16. Minority reward
 
 **Weight:** uncommon
 
@@ -161,16 +199,18 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 
 ---
 
-## 15. Safe cut
+## 17. Safe cut
 
 **Weight:** uncommon
+
+**Duel pool:**
 
 - Receive 2 gold
 - Take 1 damage, receive 4 gold
 
 ---
 
-## 16. Betrayal bait
+## 18. Betrayal bait
 
 **Weight:** uncommon
 
@@ -179,34 +219,40 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 
 ---
 
-## 17. Double or nothing
+## 19. Double or nothing
 
 **Weight:** uncommon
+
+**Duel pool:**
 
 - Receive 1 gold
 - 50% chance to receive 3 gold or take 2 damage
 
 ---
 
-## 18. Pain purse
+## 20. Pain purse
 
 **Weight:** uncommon
+
+**Duel pool:**
 
 - Take 1 damage, receive 3 gold
 - Receive 1 gold
 
 ---
 
-## 19. Side bet
+## 21. Side bet
 
 **Weight:** uncommon
+
+**Duel pool:**
 
 - Receive 1 gold
 - 20-40% chance to receive 3 gold
 
 ---
 
-## 20. Greedy cut
+## 22. Greedy cut
 
 **Weight:** uncommon
 
@@ -217,7 +263,7 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 
 ---
 
-## 21. All in alone
+## 23. All in alone
 
 **Weight:** uncommon
 
@@ -228,9 +274,11 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 
 ---
 
-## 22. Heal or Gold
+## 24. Heal or Gold
 
 **Weight:** rare
+
+**Duel pool:**
 
 - Heal 1-3 Health
 - Receive 1-3 Gold

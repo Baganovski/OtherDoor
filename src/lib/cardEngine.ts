@@ -11,12 +11,18 @@ export function getCardById(id: string): CardDefinition | undefined {
 }
 
 export function dealCard(chooserCount: number): DealtCard {
-  const pool = CARD_DEFINITIONS.filter((card) => {
+  const eligible = CARD_DEFINITIONS.filter((card) => {
     const min = card.minPlayers ?? 2;
     const max = card.maxPlayers ?? Number.POSITIVE_INFINITY;
     return chooserCount >= min && chooserCount <= max;
   });
-  const deck = pool.length > 0 ? pool : CARD_DEFINITIONS;
+
+  // Deal pools: Solo (1) via min/max; Duel (2) via twoPlayerPool; Trio (3+) via eligible.
+  const pool =
+    chooserCount === 2
+      ? eligible.filter((card) => card.twoPlayerPool)
+      : eligible;
+  const deck = pool.length > 0 ? pool : eligible.length > 0 ? eligible : CARD_DEFINITIONS;
 
   const totalWeight = deck.reduce((sum, card) => sum + WEIGHT_VALUES[card.weight], 0);
   let roll = Math.random() * totalWeight;

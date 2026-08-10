@@ -28,6 +28,7 @@ export const CARD_DEFINITIONS: CardDefinition[] = [
     id: 'chance-damage',
     title: 'Chance damage',
     weight: 'common',
+    twoPlayerPool: true,
     optionA: {
       label: '10–30% chance to take 3 damage',
       effect: { type: 'chanceDamage', minChance: 10, maxChance: 30, damage: 3, rollKey: 'a.chance' },
@@ -51,6 +52,7 @@ export const CARD_DEFINITIONS: CardDefinition[] = [
     id: 'risk-gold',
     title: 'Risk gold',
     weight: 'common',
+    twoPlayerPool: true,
     optionA: {
       label: 'Receive 2 gold, then 40–60% chance to take 1 damage',
       effect: {
@@ -78,6 +80,7 @@ export const CARD_DEFINITIONS: CardDefinition[] = [
     id: 'safe-vs-gamble',
     title: 'Safe vs gamble',
     weight: 'common',
+    twoPlayerPool: true,
     optionA: {
       label: '5–20% chance to take 4 damage',
       effect: { type: 'chanceDamage', minChance: 5, maxChance: 20, damage: 4, rollKey: 'a.chance' },
@@ -91,6 +94,7 @@ export const CARD_DEFINITIONS: CardDefinition[] = [
     id: 'blood-money',
     title: 'Blood money',
     weight: 'common',
+    twoPlayerPool: true,
     optionA: {
       label: 'Take 2 damage, receive 3 gold',
       effect: {
@@ -104,6 +108,59 @@ export const CARD_DEFINITIONS: CardDefinition[] = [
     optionB: {
       label: '50% chance to take 1 damage',
       effect: { type: 'chanceDamage', minChance: 50, maxChance: 50, damage: 1, rollKey: 'b.chance' },
+    },
+  },
+  {
+    id: 'loaded-dice',
+    title: 'Loaded dice',
+    weight: 'common',
+    twoPlayerPool: true,
+    optionA: {
+      label: '15–30% chance to receive 4 gold',
+      effect: {
+        type: 'chanceGold',
+        minChance: 15,
+        maxChance: 30,
+        gold: 4,
+        rollKey: 'a.chance',
+      },
+    },
+    optionB: {
+      label: '60–80% chance to receive 2 gold',
+      effect: {
+        type: 'chanceGold',
+        minChance: 60,
+        maxChance: 80,
+        gold: 2,
+        rollKey: 'b.chance',
+      },
+    },
+  },
+  {
+    id: 'bleed-bet',
+    title: 'Bleed bet',
+    weight: 'common',
+    twoPlayerPool: true,
+    optionA: {
+      label: 'Receive 1 gold, then 25–40% chance to take 2 damage',
+      effect: {
+        type: 'goldThenChanceDamage',
+        gold: 1,
+        minChance: 25,
+        maxChance: 40,
+        damage: 2,
+        rollKey: 'a.chance',
+      },
+    },
+    optionB: {
+      label: '50–70% chance to receive 2 gold',
+      effect: {
+        type: 'chanceGold',
+        minChance: 50,
+        maxChance: 70,
+        gold: 2,
+        rollKey: 'b.chance',
+      },
     },
   },
   {
@@ -234,6 +291,7 @@ export const CARD_DEFINITIONS: CardDefinition[] = [
     id: 'double-or-nothing',
     title: 'Triple or trouble',
     weight: 'uncommon',
+    twoPlayerPool: true,
     optionA: { label: 'Receive 1 gold', effect: { type: 'receiveGold', amount: 1 } },
     optionB: {
       label: '50% chance to receive 3 gold or take 2 damage',
@@ -337,6 +395,7 @@ export const CARD_DEFINITIONS: CardDefinition[] = [
     id: 'heal-or-gold',
     title: 'Heal or gold',
     weight: 'rare',
+    twoPlayerPool: true,
     optionA: {
       label: 'Heal 1–3 health',
       effect: { type: 'healRange', min: 1, max: 3, rollKey: 'a.heal' },

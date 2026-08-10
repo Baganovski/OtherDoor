@@ -9,6 +9,7 @@ export type CardEffect =
   | { type: 'damageIfMultiple'; multipleDamage: number }
   | { type: 'majorityDamage'; amount: number }
   | { type: 'chanceDamage'; minChance: number; maxChance: number; damage: number; rollKey: string }
+  | { type: 'chanceGold'; minChance: number; maxChance: number; gold: number; rollKey: string }
   | { type: 'soloGold'; minGold: number; maxGold: number; rollKey?: string }
   | { type: 'goldThenChanceDamage'; gold: number; minChance: number; maxChance: number; damage: number; rollKey: string }
   | { type: 'crowdGold'; crowdGold: number }
@@ -37,6 +38,11 @@ export interface CardDefinition {
   minPlayers?: number;
   /** Maximum alive choosers allowed to deal this card. Default unlimited. */
   maxPlayers?: number;
+  /**
+   * Duel pool: when exactly 2 choosers remain, only these cards are dealt.
+   * They also remain eligible when 3+ choosers are alive (alongside the Trio pool).
+   */
+  twoPlayerPool?: boolean;
   optionA: CardOption;
   optionB: CardOption;
 }
@@ -107,6 +113,7 @@ export function collectRollKeys(
     case 'receiveGoldRange':
       return [{ key: effect.rollKey, min: effect.min, max: effect.max }];
     case 'chanceDamage':
+    case 'chanceGold':
       return [
         {
           key: effect.rollKey,
@@ -219,6 +226,20 @@ export function applyCardEffect(effect: CardEffect, context: EffectContext): Eff
       );
       if (Math.random() * 100 < chance) {
         return { health: -effect.damage, money: 0 };
+      }
+      return emptyDelta();
+    }
+
+    case 'chanceGold': {
+      const chance = getRollValue(
+        rolls,
+        effect.rollKey,
+        effect.minChance,
+        effect.maxChance,
+        CHANCE_ROLL_STEP,
+      );
+      if (Math.random() * 100 < chance) {
+        return { health: 0, money: effect.gold };
       }
       return emptyDelta();
     }

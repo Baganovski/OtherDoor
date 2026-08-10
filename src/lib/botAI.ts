@@ -53,6 +53,10 @@ function estimateEffect(
       const chance = rollOrMid(rolls, effect.rollKey, effect.minChance, effect.maxChance);
       return { health: -effect.damage * (chance / 100), money: 0 };
     }
+    case 'chanceGold': {
+      const chance = rollOrMid(rolls, effect.rollKey, effect.minChance, effect.maxChance);
+      return { health: 0, money: effect.gold * (chance / 100) };
+    }
     case 'soloGold': {
       const gold = effect.rollKey
         ? rollOrMid(rolls, effect.rollKey, effect.minGold, effect.maxGold)
