@@ -308,69 +308,6 @@ button {
   color: var(--accent-bright);
 }
 
-.join-code-static {
-  display: inline-block;
-  cursor: default;
-}
-
-.player-count-fieldset {
-  border: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 0.5rem;
-}
-
-.player-count-fieldset legend {
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  padding: 0;
-}
-
-.player-count-hint {
-  margin: 0;
-  font-size: 0.8rem;
-  color: var(--text-muted);
-}
-
-.player-count-options {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 0.5rem;
-}
-
-.player-count-option {
-  display: block;
-  cursor: pointer;
-}
-
-.player-count-option input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.player-count-option span {
-  display: grid;
-  place-items: center;
-  min-height: 2.75rem;
-  border: 1px solid rgba(42, 34, 26, 0.45);
-  background: rgba(255, 252, 245, 0.85);
-  color: var(--text);
-  font-family: var(--font-display);
-  font-size: 1.1rem;
-}
-
-.player-count-option input:checked + span {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-}
-
-.player-count-option input:focus-visible + span {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
-}
-
 .room-main {
   max-width: 32rem;
   margin: 0 auto;
@@ -455,15 +392,32 @@ button {
 .seat-tags {
   display: flex;
   gap: 0.35rem;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.seat-remove-bot {
+  padding: 0.2rem 0.5rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.roster .btn-secondary {
+  width: 100%;
+  margin-top: 0.75rem;
 }
 
 .tag {
+  flex-shrink: 0;
   font-size: 0.7rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   padding: 0.2rem 0.45rem;
   border: 1px solid rgba(42, 34, 26, 0.45);
   color: var(--text);
+  white-space: nowrap;
 }
 
 .tag-muted {
@@ -496,9 +450,18 @@ button {
 
 .hud-name {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
+  min-width: 0;
   font-weight: 500;
+}
+
+.hud-name > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .hud-stats {
@@ -506,6 +469,7 @@ button {
   flex-wrap: wrap;
   gap: 0.75rem;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .stat {
@@ -557,12 +521,14 @@ button {
 }
 
 .status-pill {
+  flex-shrink: 0;
   font-size: 0.65rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   padding: 0.15rem 0.4rem;
   border: 1px solid rgba(42, 34, 26, 0.45);
   color: var(--text);
+  white-space: nowrap;
 }
 
 .status-pill.status-alive {
@@ -894,16 +860,6 @@ span.typewriter {
 @media (min-width: 640px) {
   .choice-grid-two {
     grid-template-columns: repeat(2, 1fr);
-  }
-
-  .hud-row {
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    column-gap: 1rem;
-  }
-
-  .hud-row-has-decision {
-    grid-template-columns: minmax(0, 1fr) auto 9.5rem;
   }
 
   .results-row {

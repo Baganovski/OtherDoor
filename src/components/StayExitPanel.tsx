@@ -5,7 +5,7 @@ interface StayExitPanelProps {
   disabled: boolean;
   onSubmit: (choice: StayBankChoice) => void;
   roundKey?: string | number;
-  isDemo?: boolean;
+  hasBots?: boolean;
 }
 
 const STAY_DETAIL = 'Keep playing this round with your unbanked gold at risk';
@@ -16,12 +16,12 @@ export function StayExitPanel({
   disabled,
   onSubmit,
   roundKey,
-  isDemo = false,
+  hasBots = false,
 }: StayExitPanelProps) {
   const [selected, setSelected] = useState<StayBankChoice | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const locked = disabled || selected !== null;
-  const waitingFor = isDemo ? 'CPUs' : 'other players';
+  const waitingFor = hasBots ? 'everyone else' : 'other players';
 
   useEffect(() => {
     setSelected(null);

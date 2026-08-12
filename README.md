@@ -2,7 +2,7 @@
 
 **Pick a side. Bank your gold.**
 
-A phone-to-phone party game. Create a room, share the code, and lock in your choices — or practice locally against computer opponents.
+A phone-to-phone party game. Create a room, share the code, and lock in your choices. Add bots in the lobby to fill seats.
 
 | | |
 |---|---|
@@ -52,20 +52,17 @@ After round 3, **final standings** rank players by **banked gold**. Highest bank
 1. **Create game** — enter your name (up to 20 characters); you get a **6-letter** room code.
 2. Share the code — tap it in the top bar to copy.
 3. Others choose **Join game**, enter the code and a **unique** name.
-4. When **2–6** players are connected, anyone can tap **Start the game**.
-5. Play through three rounds; compare banked gold on the final standings screen.
+4. In the lobby, anyone can **Add bot** to fill empty seats (up to 6 total).
+5. When **2–6** players (humans and/or bots) are connected, anyone can tap **Start the game**.
+6. Play through three rounds; compare banked gold on the final standings screen.
 
-Peer-to-peer over **PeerJS**: the host phone holds game state; signaling only goes through PeerJS.
-
-### Demo vs computer
-
-From the home screen, **Demo vs computer** runs the same rules locally — you plus **1–5** CPU opponents (2–6 total). No networking. Bots weigh risk vs reward and usually bank near **5 HP**.
+Peer-to-peer over **PeerJS**: the host phone holds game state and runs bots; signaling only goes through PeerJS. Bots weigh risk vs reward and usually bank near **5 HP**.
 
 ## Features
 
 - Join code pinned at the top of every screen (copyable in multiplayer)
 - Live HUD on every phone: HP, pocket gold, banked gold, and status
-- Lobby roster with host / you tags
+- Lobby roster with host / you / bot tags; add or remove bots before start
 - Simultaneous secret choices and Stay/Bank checkpoints
 - **20** weighted decision pairs — see [`docs/card-brainstorm.md`](docs/card-brainstorm.md) and [`src/data/cards.ts`](src/data/cards.ts)
 - Dropped players are removed from active play; the run continues

@@ -230,18 +230,7 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 
 ---
 
-## 20. Pain purse
-
-**Weight:** uncommon
-
-**Duel pool:**
-
-- Take 1 damage, receive 3 gold
-- Receive 1 gold
-
----
-
-## 21. Side bet
+## 20. Side bet
 
 **Weight:** uncommon
 
@@ -252,7 +241,7 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 
 ---
 
-## 22. Greedy cut
+## 21. Greedy cut
 
 **Weight:** uncommon
 
@@ -263,7 +252,7 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 
 ---
 
-## 23. All in alone
+## 22. All in alone
 
 **Weight:** uncommon
 
@@ -274,7 +263,7 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 
 ---
 
-## 24. Heal or Gold
+## 23. Heal or Gold
 
 **Weight:** rare
 
@@ -282,5 +271,16 @@ Entries are **numbered** and **ordered by weight** (common → uncommon → rare
 
 - Heal 1-3 Health
 - Receive 1-3 Gold
+
+---
+
+## 24. Shared heal
+
+**Weight:** rare
+
+**Duel pool:**
+
+- If everyone picks this, heal 2
+- Receive 2 gold
 
 ---

@@ -1,4 +1,4 @@
-import type { DecisionSide, DealtCard, Player, StayBankChoice } from '../types/game';
+import type { DealtCard, DecisionSide, Player, StayBankChoice } from '../types/game';
 import { BOT_EXIT_HEALTH_THRESHOLD, STARTING_HEALTH } from '../types/game';
 import type { CardEffect } from './cardEffects';
 import { getCardById, definitionSideForChoice } from './cardEngine';
@@ -92,8 +92,8 @@ function estimateEffect(
         health: 0,
         money: rollOrMid(rolls, effect.rollKey, effect.min, effect.max) * 0.4,
       };
-    case 'everyoneGold':
-      return { health: 0, money: effect.amount * 0.35 };
+    case 'everyoneHeal':
+      return { health: effect.amount * 0.35, money: 0 };
     case 'betrayal':
       // Tempting solo payout vs likely crowd damage.
       return {
@@ -184,4 +184,20 @@ export function pickBotStayBank(player: Player): StayBankChoice {
 
 export function isBotPlayer(playerId: string): boolean {
   return playerId.startsWith('bot-');
+}
+
+export function nextBotIdentity(players: Player[]): { id: string; name: string } {
+  const ids = new Set(players.map((player) => player.id));
+  const names = new Set(
+    players
+      .filter((player) => player.connected)
+      .map((player) => player.name.toLowerCase()),
+  );
+
+  let serial = 1;
+  while (ids.has(`bot-${serial}`) || names.has(`bot ${serial}`)) {
+    serial += 1;
+  }
+
+  return { id: `bot-${serial}`, name: `Bot ${serial}` };
 }

@@ -37,7 +37,7 @@ If the crowded case is just “no reward,” omit it — `if only you pick this`
 ## Design checks (before suggesting)
 
 1. **Both options must be pickable** — each side needs a real reason to choose it. Reject pairs where one option is strictly worse with no bluff/social angle (e.g. “safe gold vs take flat damage with no upside,” or “take 1 vs take 1-or-3 with no reward on either side”).
-2. **Not too similar** — read the existing list first; don’t repeat the same structure with tweaked numbers (e.g. another “solo gold vs safe gold,” another “majority damage vs majority damage”). Prefer a new tension: split, chance, everyone, minority, betrayal, etc.
+2. **Not too similar** — read the existing list first; don’t repeat the same structure with tweaked numbers (e.g. another “solo gold vs safe gold,” another “majority damage vs majority damage”). Prefer a new tension: split, chance, minority, betrayal, etc. Do not add more “if everyone picks this” gold cards; shared heal is the exception.
 3. **Healing is rare** — prefer gold and damage; keep heal pairs at `rare` and few in number.
 
 ## Deal pools (reference)

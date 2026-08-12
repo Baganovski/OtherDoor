@@ -3,7 +3,6 @@ import { isBotPlayer } from '../lib/botAI';
 import { PlayerHudStats } from './PlayerHudStats';
 
 interface GameHudProps {
-  isDemo?: boolean;
   players: Array<{
     id: string;
     name: string;
@@ -31,7 +30,7 @@ function statusLabel(status: PlayerStatus, connected: boolean): string {
   }
 }
 
-export function GameHud({ players, isDemo = false }: GameHudProps) {
+export function GameHud({ players }: GameHudProps) {
   const sortedPlayers = [...players].sort((a, b) => {
     if (a.isYou) return -1;
     if (b.isYou) return 1;
@@ -46,7 +45,7 @@ export function GameHud({ players, isDemo = false }: GameHudProps) {
           const showBanked = player.status === 'exited' || player.bankedGold > 0;
           const showLost = player.status === 'dead';
           const pendingLabel =
-            isDemo && isBotPlayer(player.id) ? 'Thinking…' : 'Waiting';
+            isBotPlayer(player.id) ? 'Thinking…' : 'Waiting';
 
           return (
             <li

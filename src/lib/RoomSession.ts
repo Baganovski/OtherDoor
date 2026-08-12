@@ -27,6 +27,18 @@ import {
   markDisconnectedInGame,
   resetPlayersForGameStart,
 } from './gameLogic';
+import { isBotPlayer, nextBotIdentity, pickBotChoice, pickBotStayBank } from './botAI';
+
+const BOT_THINK_MIN_MS = 1000;
+const BOT_THINK_MAX_MS = 5000;
+const RESOLVE_DWELL_MS = 900;
+
+function randomBotThinkMs(): number {
+  return (
+    BOT_THINK_MIN_MS +
+    Math.floor(Math.random() * (BOT_THINK_MAX_MS - BOT_THINK_MIN_MS + 1))
+  );
+}
 function toPublicState(state: GameState): PublicGameState {
   const { localPlayerId: _, ...publicState } = state;
   return publicState;
@@ -48,6 +60,8 @@ export class RoomSession {
   private hostConnection: DataConnection | null = null;
   private destroyed = false;
   private migrationInProgress = false;
+  private botTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  private resolveTimer: ReturnType<typeof setTimeout> | null = null;
   private constructor(state: GameState, callbacks: RoomCallbacks) {
     this.state = state;
     this.callbacks = callbacks;
@@ -112,6 +126,20 @@ export class RoomSession {
     }
     this.send({ type: 'start', startedBy: this.state.localPlayerId });
   }
+  addBot(): void {
+    if (this.isHost) {
+      this.handleAddBot();
+      return;
+    }
+    this.send({ type: 'addBot' });
+  }
+  removeBot(playerId: string): void {
+    if (this.isHost) {
+      this.handleRemoveBot(playerId);
+      return;
+    }
+    this.send({ type: 'removeBot', playerId });
+  }
   submitChoice(choice: DecisionSide): void {
     this.send({
       type: 'submitChoice',
@@ -134,6 +162,7 @@ export class RoomSession {
   }
   destroy(): void {
     this.destroyed = true;
+    this.clearAllTimers();
     for (const connection of this.connections.values()) {
       connection.close();
     }
@@ -297,6 +326,12 @@ export class RoomSession {
       case 'start':
         if (this.isHost) this.handleStart(message.startedBy);
         break;
+      case 'addBot':
+        if (this.isHost) this.handleAddBot();
+        break;
+      case 'removeBot':
+        if (this.isHost) this.handleRemoveBot(message.playerId);
+        break;
       case 'submitChoice':
         if (this.isHost) this.handleSubmitChoice(message.playerId, message.choice);
         break;
@@ -402,6 +437,96 @@ export class RoomSession {
     this.broadcast({ type: 'lobbyUpdate', players });
     this.emitState();
   }
+  private handleAddBot(): void {
+    if (!this.isHost || this.state.phase !== 'lobby') return;
+    const connectedCount = this.state.players.filter((player) => player.connected).length;
+    if (connectedCount >= MAX_PLAYERS) {
+      this.broadcast({
+        type: 'notice',
+        message: `Room is full (${MAX_PLAYERS}/${MAX_PLAYERS}).`,
+      });
+      return;
+    }
+    const { id, name } = nextBotIdentity(this.state.players);
+    this.state.players = [
+      ...this.state.players,
+      createInitialPlayer(id, name, this.state.players.length),
+    ];
+    this.broadcastLobby();
+  }
+  private handleRemoveBot(playerId: string): void {
+    if (!this.isHost || this.state.phase !== 'lobby') return;
+    if (!isBotPlayer(playerId)) return;
+    const exists = this.state.players.some((player) => player.id === playerId);
+    if (!exists) return;
+    this.state.players = this.state.players.filter((player) => player.id !== playerId);
+    this.broadcastLobby();
+  }
+  private clearBotTimers(): void {
+    for (const timer of this.botTimers.values()) {
+      clearTimeout(timer);
+    }
+    this.botTimers.clear();
+  }
+  private clearResolveTimer(): void {
+    if (this.resolveTimer !== null) {
+      clearTimeout(this.resolveTimer);
+      this.resolveTimer = null;
+    }
+  }
+  private clearAllTimers(): void {
+    this.clearBotTimers();
+    this.clearResolveTimer();
+  }
+  private scheduleBotTurns(): void {
+    if (!this.isHost || this.destroyed) return;
+    if (this.state.phase !== 'choosing' && this.state.phase !== 'stayOrBank') return;
+
+    const phase = this.state.phase;
+    for (const player of this.state.players) {
+      if (
+        !isBotPlayer(player.id) ||
+        !player.connected ||
+        player.status !== 'alive' ||
+        player.hasSubmitted ||
+        this.botTimers.has(player.id)
+      ) {
+        continue;
+      }
+
+      const botId = player.id;
+      const timer = setTimeout(() => {
+        this.botTimers.delete(botId);
+        if (this.destroyed) return;
+        this.runSingleBotTurn(botId, phase);
+      }, randomBotThinkMs());
+      this.botTimers.set(botId, timer);
+    }
+  }
+  private runSingleBotTurn(
+    botId: string,
+    scheduledPhase: 'choosing' | 'stayOrBank',
+  ): void {
+    if (!this.isHost || this.state.phase !== scheduledPhase) return;
+
+    const bot = this.state.players.find((entry) => entry.id === botId);
+    if (
+      !bot ||
+      !isBotPlayer(bot.id) ||
+      !bot.connected ||
+      bot.status !== 'alive' ||
+      bot.hasSubmitted
+    ) {
+      return;
+    }
+
+    if (scheduledPhase === 'choosing') {
+      this.handleSubmitChoice(botId, pickBotChoice(bot, this.state.currentCard));
+      return;
+    }
+
+    this.handleSubmitStayBank(botId, pickBotStayBank(bot));
+  }
   private handleStart(startedBy: string): void {
     if (!this.isHost) return;
     const connectedCount = this.state.players.filter((player) => player.connected).length;
@@ -413,6 +538,7 @@ export class RoomSession {
       return;
     }
     if (this.state.phase !== 'lobby') return;
+    this.clearAllTimers();
     this.pendingDecisions.clear();
     this.pendingStayBank.clear();
     const card = dealCard(getActiveChoosers(this.state.players).length);
@@ -430,6 +556,7 @@ export class RoomSession {
     this.broadcast({ type: 'stateSync', state: toPublicState(this.state) });
     this.emitState();
     this.emitNotice(`Round 1 of ${ROUNDS_PER_RUN} begins. Make your choice.`);
+    this.scheduleBotTurns();
   }
   private handleSubmitChoice(playerId: string, choice: DecisionSide): void {
     if (!this.isHost || this.state.phase !== 'choosing') return;
@@ -460,14 +587,36 @@ export class RoomSession {
     }
   }
   private resolveCurrentChoice(): void {
-    if (!this.isHost || !this.state.currentCard) return;
-    this.updateState({ phase: 'resolving' });
-    const updatedPlayers = resolveCardRound(
-      this.state.players,
-      this.pendingDecisions,
-      this.state.currentCard,
-    );
+    if (!this.isHost || !this.state.currentCard || this.state.phase !== 'choosing') return;
+    this.clearAllTimers();
+
+    const card = this.state.currentCard;
+    const decisions = new Map(this.pendingDecisions);
     this.pendingDecisions.clear();
+
+    const updatedPlayers = resolveCardRound(this.state.players, decisions, card);
+    // Apply outcomes now so HP/gold can step during the resolve beat;
+    // keep Decision made visible until the next phase.
+    this.state = {
+      ...this.state,
+      phase: 'resolving',
+      players: updatedPlayers.map((player) =>
+        player.status === 'alive' && player.connected
+          ? { ...player, hasSubmitted: true }
+          : player,
+      ),
+    };
+    this.broadcast({ type: 'roundResult', state: toPublicState(this.state) });
+    this.emitState();
+
+    this.resolveTimer = setTimeout(() => {
+      this.resolveTimer = null;
+      if (this.destroyed || !this.isHost) return;
+      this.finishCardRound(updatedPlayers);
+    }, RESOLVE_DWELL_MS);
+  }
+  private finishCardRound(updatedPlayers: Player[]): void {
+    if (!this.isHost) return;
     if (!hasAlivePlayers(updatedPlayers)) {
       this.advanceRoundOrFinish(updatedPlayers);
       return;
@@ -486,6 +635,7 @@ export class RoomSession {
       this.emitState();
       this.emitNotice('Four choices done. Stay in or bank your gold for this round?');
       this.maybeFinishAfterPlayerChange();
+      this.scheduleBotTurns();
       return;
     }
     const nextCard = dealCard(getActiveChoosers(updatedPlayers).length);
@@ -501,12 +651,36 @@ export class RoomSession {
     this.emitState();
     this.emitNotice(`Choice ${this.state.choiceIndexInBlock} of 4.`);
     this.maybeFinishAfterPlayerChange();
+    this.scheduleBotTurns();
   }
   private resolveStayBankCheckpoint(): void {
-    if (!this.isHost) return;
-    this.updateState({ phase: 'resolving' });
-    const updatedPlayers = resolveStayBank(this.state.players, this.pendingStayBank);
+    if (!this.isHost || this.state.phase !== 'stayOrBank') return;
+    this.clearAllTimers();
+
+    const decisions = new Map(this.pendingStayBank);
     this.pendingStayBank.clear();
+
+    const updatedPlayers = resolveStayBank(this.state.players, decisions);
+    this.state = {
+      ...this.state,
+      phase: 'resolving',
+      players: updatedPlayers.map((player) =>
+        player.status === 'alive' && player.connected
+          ? { ...player, hasSubmitted: true }
+          : player,
+      ),
+    };
+    this.broadcast({ type: 'roundResult', state: toPublicState(this.state) });
+    this.emitState();
+
+    this.resolveTimer = setTimeout(() => {
+      this.resolveTimer = null;
+      if (this.destroyed || !this.isHost) return;
+      this.finishStayBank(updatedPlayers);
+    }, RESOLVE_DWELL_MS);
+  }
+  private finishStayBank(updatedPlayers: Player[]): void {
+    if (!this.isHost) return;
     if (hasAlivePlayers(updatedPlayers)) {
       const nextCard = dealCard(getActiveChoosers(updatedPlayers).length);
       this.state = {
@@ -521,6 +695,7 @@ export class RoomSession {
       this.broadcast({ type: 'roundResult', state: toPublicState(this.state) });
       this.emitState();
       this.emitNotice(`Block ${this.state.blockNumber} begins. Make your choice.`);
+      this.scheduleBotTurns();
       return;
     }
     this.advanceRoundOrFinish(updatedPlayers);
@@ -547,6 +722,7 @@ export class RoomSession {
       this.emitNotice(
         `Round ${nextRound} of ${ROUNDS_PER_RUN} — healed. Make your choice.`,
       );
+      this.scheduleBotTurns();
       return;
     }
 
@@ -626,7 +802,9 @@ export class RoomSession {
       player.id === departedHostId ? markDisconnectedInGame(player, inGame) : player,
     );
 
-    const remaining = this.state.players.filter((player) => player.connected);
+    const remaining = this.state.players.filter(
+      (player) => player.connected && !isBotPlayer(player.id),
+    );
     if (remaining.length === 0) {
       this.emitError('Everyone left the room.');
       this.destroy();
@@ -680,6 +858,8 @@ export class RoomSession {
       // Do not resolve the beat — submissions were cleared above.
       if (isRoundOver(this.state.players)) {
         this.advanceRoundOrFinish(this.state.players);
+      } else {
+        this.scheduleBotTurns();
       }
     }
   }
@@ -702,6 +882,7 @@ export class RoomSession {
       state: toPublicState(this.state),
     });
     this.emitState();
+    this.scheduleBotTurns();
   }
   private mapConnectionToPlayer(connection: DataConnection, playerId: string): void {
     this.connections.set(playerId, connection);

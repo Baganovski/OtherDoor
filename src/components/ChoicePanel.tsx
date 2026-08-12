@@ -7,7 +7,7 @@ interface ChoicePanelProps {
   disabled: boolean;
   onSubmit: (choice: DecisionSide) => void;
   roundKey?: string | number;
-  isDemo?: boolean;
+  hasBots?: boolean;
 }
 
 export function ChoicePanel({
@@ -15,12 +15,12 @@ export function ChoicePanel({
   disabled,
   onSubmit,
   roundKey,
-  isDemo = false,
+  hasBots = false,
 }: ChoicePanelProps) {
   const [selected, setSelected] = useState<DecisionSide | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const locked = disabled || selected !== null;
-  const waitingFor = isDemo ? 'CPUs' : 'other players';
+  const waitingFor = hasBots ? 'everyone else' : 'other players';
 
   useEffect(() => {
     setSelected(null);

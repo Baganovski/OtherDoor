@@ -1,15 +1,25 @@
 interface LobbyRosterProps {
   connectedCount: number;
+  canAddBot: boolean;
+  onAddBot: () => void;
+  onRemoveBot: (playerId: string) => void;
   players: Array<{
     id: string;
     name: string;
     connected: boolean;
     isHost: boolean;
     isYou: boolean;
+    isBot: boolean;
   }>;
 }
 
-export function LobbyRoster({ players, connectedCount }: LobbyRosterProps) {
+export function LobbyRoster({
+  players,
+  connectedCount,
+  canAddBot,
+  onAddBot,
+  onRemoveBot,
+}: LobbyRosterProps) {
   const seats = Array.from({ length: 6 }, (_, index) => players[index] ?? null);
 
   return (
@@ -29,7 +39,17 @@ export function LobbyRoster({ players, connectedCount }: LobbyRosterProps) {
                 </span>
                 <span className="seat-tags">
                   {player.isHost && <span className="tag">host</span>}
+                  {player.isBot && <span className="tag">bot</span>}
                   {!player.connected && <span className="tag tag-muted">away</span>}
+                  {player.isBot && (
+                    <button
+                      type="button"
+                      className="btn btn-ghost seat-remove-bot"
+                      onClick={() => onRemoveBot(player.id)}
+                    >
+                      Remove
+                    </button>
+                  )}
                 </span>
               </>
             ) : (
@@ -38,6 +58,14 @@ export function LobbyRoster({ players, connectedCount }: LobbyRosterProps) {
           </li>
         ))}
       </ul>
+      <button
+        type="button"
+        className="btn btn-secondary"
+        disabled={!canAddBot}
+        onClick={onAddBot}
+      >
+        {canAddBot ? 'Add bot' : 'No seats left'}
+      </button>
     </div>
   );
 }

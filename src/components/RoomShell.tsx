@@ -20,13 +20,17 @@ interface RoomShellProps {
   canStart: boolean;
   onStart: () => void;
   onLeave: () => void;
-  isDemo?: boolean;
+  onAddBot: () => void;
+  onRemoveBot: (playerId: string) => void;
+  canAddBot: boolean;
+  hasBots?: boolean;
   roster: Array<{
     id: string;
     name: string;
     connected: boolean;
     isHost: boolean;
     isYou: boolean;
+    isBot: boolean;
   }>;
   players: Array<{
     id: string;
@@ -78,7 +82,10 @@ export function RoomShell({
   canStart,
   onStart,
   onLeave,
-  isDemo = false,
+  onAddBot,
+  onRemoveBot,
+  canAddBot,
+  hasBots = false,
   roster,
   players,
   roundNumber,
@@ -100,14 +107,13 @@ export function RoomShell({
   const [interstitialLines, setInterstitialLines] = useState<string[]>(['NEXT SELECTION']);
   const [actionSlotMinHeight, setActionSlotMinHeight] = useState(ACTION_SLOT_FALLBACK_MIN_PX);
   const prevPhaseRef = useRef(phase);
+  const prevRoundNumberRef = useRef(roundNumber);
   const interstitialHoldTimerRef = useRef(0);
   const actionSlotRef = useRef<HTMLDivElement>(null);
 
   const eyebrow =
     phase === 'lobby'
-      ? isDemo
-        ? 'Demo lobby'
-        : 'Waiting room'
+      ? 'Waiting room'
       : phase === 'finished'
         ? 'Run complete'
         : phase === 'stayOrBank'
@@ -116,9 +122,7 @@ export function RoomShell({
 
   const title =
     phase === 'lobby'
-      ? isDemo
-        ? 'Practice vs computer'
-        : 'Gather your party'
+      ? 'Gather your party'
       : phase === 'finished'
         ? 'Final standings'
         : phase === 'resolving'
@@ -129,9 +133,7 @@ export function RoomShell({
 
   const copy =
     phase === 'lobby'
-      ? isDemo
-        ? 'Take your time — CPUs think for a few seconds, weigh risk vs reward, and usually bank near 5 health.'
-        : `Share the code. Anyone can start with ${MIN_PLAYERS}–${MAX_PLAYERS} players.`
+      ? `Share the code or add bots. Anyone can start with ${MIN_PLAYERS}–${MAX_PLAYERS} players.`
       : phase === 'finished'
         ? 'Banked gold is safe. Anyone who died lost their unbanked gold and is out for the run.'
         : phase === 'resolving'
@@ -149,27 +151,18 @@ export function RoomShell({
 
   useEffect(() => {
     const prevPhase = prevPhaseRef.current;
+    const prevRoundNumber = prevRoundNumberRef.current;
     prevPhaseRef.current = phase;
+    prevRoundNumberRef.current = roundNumber;
 
     const enteringFromResolve =
       prevPhase === 'resolving' &&
       (phase === 'choosing' || phase === 'stayOrBank' || phase === 'finished');
 
     const enteringRunFromLobby = prevPhase === 'lobby' && phase === 'choosing';
+    const roundAdvanced = roundNumber > prevRoundNumber;
 
-    const isFirstChoiceOfRun =
-      phase === 'choosing' &&
-      roundNumber === 1 &&
-      blockNumber === 1 &&
-      choiceIndexInBlock === 1;
-
-    const isNewRoundStart =
-      phase === 'choosing' &&
-      blockNumber === 1 &&
-      choiceIndexInBlock === 1 &&
-      !isFirstChoiceOfRun;
-
-    if (enteringRunFromLobby && isFirstChoiceOfRun) {
+    if (enteringRunFromLobby) {
       window.clearTimeout(interstitialHoldTimerRef.current);
       setInterstitialLines([`ROUND ${roundNumber}`]);
       setInterstitialStep(0);
@@ -177,9 +170,11 @@ export function RoomShell({
     } else if (enteringFromResolve) {
       window.clearTimeout(interstitialHoldTimerRef.current);
       if (phase === 'finished') {
-        setInterstitialLines(['ROUND END']);
-      } else if (isNewRoundStart) {
+        setInterstitialLines(['ROUND END', 'RUN OVER']);
+      } else if (roundAdvanced) {
         setInterstitialLines(['ROUND END', `ROUND ${roundNumber}`]);
+      } else if (phase === 'stayOrBank') {
+        setInterstitialLines(['STAY OR BANK?']);
       } else {
         setInterstitialLines(['NEXT SELECTION']);
       }
@@ -240,14 +235,20 @@ export function RoomShell({
 
   return (
     <div className="room-shell">
-      <JoinCodeBar code={roomCode} onLeave={onLeave} isDemo={isDemo} />
+      <JoinCodeBar code={roomCode} onLeave={onLeave} />
 
       <main className="room-main">
         {phase === 'lobby' ? (
           <section className="panel lobby-panel">
             <PanelHeader eyebrow={eyebrow} title={title} copy={copy} />
 
-            <LobbyRoster players={roster} connectedCount={connectedCount} />
+            <LobbyRoster
+              players={roster}
+              connectedCount={connectedCount}
+              canAddBot={canAddBot}
+              onAddBot={onAddBot}
+              onRemoveBot={onRemoveBot}
+            />
 
             <button
               type="button"
@@ -256,9 +257,7 @@ export function RoomShell({
               onClick={onStart}
             >
               {canStart
-                ? isDemo
-                  ? 'Start demo'
-                  : 'Start the game'
+                ? 'Start the game'
                 : `Waiting for players (${connectedCount}/${MAX_PLAYERS} · min ${MIN_PLAYERS})`}
             </button>
           </section>
@@ -309,7 +308,7 @@ export function RoomShell({
                     disabled={localHasSubmitted || phase === 'resolving' || !localCanAct}
                     onSubmit={onSubmitChoice}
                     roundKey={choiceKey}
-                    isDemo={isDemo}
+                    hasBots={hasBots}
                   />
                 )}
 
@@ -318,13 +317,13 @@ export function RoomShell({
                     disabled={localHasSubmitted || phase === 'resolving' || !localCanAct}
                     onSubmit={onSubmitStayBank}
                     roundKey={choiceKey}
-                    isDemo={isDemo}
+                    hasBots={hasBots}
                   />
                 )}
               </div>
             )}
 
-            <GameHud players={players} isDemo={isDemo} />
+            <GameHud players={players} />
           </section>
         )}
       </main>
@@ -333,8 +332,8 @@ export function RoomShell({
       {error && <Toast message={error} tone="error" onDismiss={onDismissError} />}
       {inGame && !notice && !error && (
         <p className="connection-hint">
-          {isDemo
-            ? 'Local demo — CPUs weigh risk vs reward and usually bank near 5 health.'
+          {hasBots
+            ? 'Bots weigh risk vs reward and usually bank near 5 health. Phones stay linked peer-to-peer.'
             : 'Phones stay linked peer-to-peer. Dropped players are skipped.'}
         </p>
       )}

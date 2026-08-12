@@ -20,7 +20,7 @@ export type CardEffect =
   | { type: 'majorityGoldRange'; min: number; max: number; rollKey: string }
   | { type: 'minorityGold'; amount: number }
   | { type: 'minorityGoldRange'; min: number; max: number; rollKey: string }
-  | { type: 'everyoneGold'; amount: number }
+  | { type: 'everyoneHeal'; amount: number }
   | { type: 'betrayal'; soloGold: number; crowdDamage: number }
   | { type: 'doubleOrNothing'; winGold: number; loseDamage: number; rollKey: string }
   | { type: 'composite'; effects: CardEffect[] };
@@ -319,9 +319,9 @@ export function applyCardEffect(effect: CardEffect, context: EffectContext): Eff
       }
       return emptyDelta();
 
-    case 'everyoneGold':
+    case 'everyoneHeal':
       if (pickersOnSide === totalChoosers && totalChoosers > 0) {
-        return { health: 0, money: effect.amount };
+        return { health: effect.amount, money: 0 };
       }
       return emptyDelta();
 

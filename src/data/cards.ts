@@ -265,19 +265,6 @@ export const CARD_DEFINITIONS: CardDefinition[] = [
     },
   },
   {
-    id: 'everyone-wins',
-    title: 'Everyone wins',
-    weight: 'uncommon',
-    optionA: {
-      label: 'If everyone picks this, receive 2 gold',
-      effect: { type: 'everyoneGold', amount: 2 },
-    },
-    optionB: {
-      label: 'If everyone picks this, receive 4 gold',
-      effect: { type: 'everyoneGold', amount: 4 },
-    },
-  },
-  {
     id: 'betrayal-bait',
     title: 'Betrayal bait',
     weight: 'uncommon',
@@ -304,22 +291,46 @@ export const CARD_DEFINITIONS: CardDefinition[] = [
     },
   },
   {
+    id: 'safe-cut',
+    title: 'Safe cut',
+    weight: 'uncommon',
+    twoPlayerPool: true,
+    optionA: { label: 'Receive 2 gold', effect: { type: 'receiveGold', amount: 2 } },
+    optionB: {
+      label: 'Take 1 damage, receive 4 gold',
+      effect: {
+        type: 'composite',
+        effects: [
+          { type: 'takeDamage', amount: 1 },
+          { type: 'receiveGold', amount: 4 },
+        ],
+      },
+    },
+  },
+  {
+    id: 'side-bet',
+    title: 'Side bet',
+    weight: 'uncommon',
+    twoPlayerPool: true,
+    optionA: { label: 'Receive 1 gold', effect: { type: 'receiveGold', amount: 1 } },
+    optionB: {
+      label: '20–40% chance to receive 3 gold',
+      effect: {
+        type: 'chanceGold',
+        minChance: 20,
+        maxChance: 40,
+        gold: 3,
+        rollKey: 'b.chance',
+      },
+    },
+  },
+  {
     id: 'lonely-purse',
     title: 'Lonely purse',
     weight: 'uncommon',
     optionA: {
       label: 'Receive 4 gold if only you pick this',
       effect: { type: 'soloGold', minGold: 4, maxGold: 4 },
-    },
-    optionB: { label: 'Receive 2 gold', effect: { type: 'receiveGold', amount: 2 } },
-  },
-  {
-    id: 'all-in-gold',
-    title: 'All-in gold',
-    weight: 'uncommon',
-    optionA: {
-      label: 'If everyone picks this, receive 5 gold',
-      effect: { type: 'everyoneGold', amount: 5 },
     },
     optionB: { label: 'Receive 2 gold', effect: { type: 'receiveGold', amount: 2 } },
   },
@@ -404,6 +415,17 @@ export const CARD_DEFINITIONS: CardDefinition[] = [
       label: 'Receive 1–3 gold',
       effect: { type: 'receiveGoldRange', min: 1, max: 3, rollKey: 'b.gold' },
     },
+  },
+  {
+    id: 'shared-heal',
+    title: 'Shared heal',
+    weight: 'rare',
+    twoPlayerPool: true,
+    optionA: {
+      label: 'If everyone picks this, heal 2',
+      effect: { type: 'everyoneHeal', amount: 2 },
+    },
+    optionB: { label: 'Receive 2 gold', effect: { type: 'receiveGold', amount: 2 } },
   },
 ];
 

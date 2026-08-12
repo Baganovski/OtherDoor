@@ -3,7 +3,7 @@ export const MAX_PLAYERS = 6;
 export const STARTING_HEALTH = 10;
 export const CHOICES_PER_BLOCK = 4;
 export const ROUNDS_PER_RUN = 3;
-/** Demo bots usually bank near this HP at stay/bank checkpoints (with light jitter). */
+/** Bots usually bank near this HP at stay/bank checkpoints (with light jitter). */
 export const BOT_EXIT_HEALTH_THRESHOLD = 5;
 
 export type GamePhase = 'lobby' | 'choosing' | 'resolving' | 'stayOrBank' | 'finished';
@@ -56,6 +56,8 @@ export type RoomMessage =
   | { type: 'joinAck'; playerId: string; state: PublicGameState }
   | { type: 'lobbyUpdate'; players: Player[] }
   | { type: 'start'; startedBy: string }
+  | { type: 'addBot' }
+  | { type: 'removeBot'; playerId: string }
   | { type: 'stateSync'; state: PublicGameState }
   | { type: 'submitChoice'; playerId: string; choice: DecisionSide }
   | { type: 'submitStayBank'; playerId: string; choice: StayBankChoice }

@@ -1,5 +1,6 @@
 import type { Player } from '../types/game';
 import { STARTING_HEALTH } from '../types/game';
+import { isBotPlayer } from './botAI';
 
 export function createInitialPlayer(
   id: string,
@@ -21,7 +22,7 @@ export function createInitialPlayer(
 
 export function electHost(players: Player[]): string | null {
   const connected = players
-    .filter((player) => player.connected)
+    .filter((player) => player.connected && !isBotPlayer(player.id))
     .sort((a, b) => a.joinOrder - b.joinOrder);
 
   return connected[0]?.id ?? null;
